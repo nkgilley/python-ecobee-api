@@ -80,7 +80,6 @@ class Ecobee(object):
         request = requests.post(url, params=params)
         self.access_token = request.json()['access_token']
         self.refresh_token = request.json()['refresh_token']
-        self.write_tokens_to_file()
         self.pin = None
 
     def refresh_tokens(self):
@@ -92,7 +91,6 @@ class Ecobee(object):
             request = requests.post(url, params=params)
             self.access_token = request.json()['access_token']
             self.refresh_token = request.json()['refresh_token']
-            self.write_tokens_to_file()
         except requests.exceptions.RequestException as exception:
             print(exception)
             self.request_pin()
@@ -190,3 +188,4 @@ class Ecobee(object):
         self.refresh_tokens()
         self.get_thermostats()
         self.get_remote_sensors()
+        self.write_tokens_to_file()

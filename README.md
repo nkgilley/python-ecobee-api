@@ -1,5 +1,5 @@
-# home-assistant-ecobee-api
-An Ecobee Thermostat Python library for use with Home-Assistant
+# python-ecobee-api
+A Python library for controlling Ecobee3 wifi thermostats.
 
 ## Notes
-This is for use with home-assistant
+This is for use with [Home-Assistant](http://home-assistant.io)

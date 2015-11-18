@@ -106,7 +106,6 @@ class Ecobee(object):
 
     def get_thermostat(self, index):
         ''' Return a single thermostat based on index '''
-        self.update()
         return self.thermostats[index]
 
     def set_hvac_mode(self, hvac_mode):

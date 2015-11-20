@@ -68,9 +68,8 @@ class Ecobee(object):
         self.pin = request.json()['ecobeePin']
         print('Please authorize your ecobee developer app with PIN code ' + self.pin)
         print('Goto https://www.ecobee.com/consumerportal/index.html, click My Apps,')
-        print('Add application, Enter Pin and click Authorize.')
-        # input('When you have authorized the app with the PIN, come back here and press enter.')
-        # self.request_tokens()
+        print('Add application, Enter Pin and click Authorize.  After authorizing, call')
+        print('the request_tokens() method.')
 
     def request_tokens(self):
         ''' Method to request API tokens from ecobee '''
@@ -78,21 +77,26 @@ class Ecobee(object):
         params = {'grant_type': 'ecobeePin', 'code': self.authorization_code,
                   'client_id': self.api_key}
         request = requests.post(url, params=params)
-        self.access_token = request.json()['access_token']
-        self.refresh_token = request.json()['refresh_token']
-        self.pin = None
+        if request.status_code == requests.codes.ok:
+            self.access_token = request.json()['access_token']
+            self.refresh_token = request.json()['refresh_token']
+            self.write_tokens_to_file()
+            self.pin = None
+        else:
+            print("Error while requesting tokens from ecobee.com. Status code: " + str(request.status_code))
+            return
 
     def refresh_tokens(self):
         ''' Method to refresh API tokens from ecobee '''
-        try:
-            url = 'https://api.ecobee.com/token'
-            params = {'grant_type': 'refresh_token', 'refresh_token': self.refresh_token,
-                      'client_id': self.api_key}
-            request = requests.post(url, params=params)
+        url = 'https://api.ecobee.com/token'
+        params = {'grant_type': 'refresh_token', 'refresh_token': self.refresh_token,
+                  'client_id': self.api_key}
+        request = requests.post(url, params=params)
+        if request.status_code == requests.codes.ok:
             self.access_token = request.json()['access_token']
             self.refresh_token = request.json()['refresh_token']
-        except requests.exceptions.RequestException as exception:
-            print(exception)
+            self.write_tokens_to_file()
+        else:
             self.request_pin()
 
     def get_thermostats(self):
@@ -102,11 +106,14 @@ class Ecobee(object):
                   'Authorization': 'Bearer ' + self.access_token}
         params = {'json': '{"selection":{"selectionType":"registered","includeRuntime":"true","includeSensors":"true","includeProgram":"true","includeEquipmentStatus":true,"includeSettings":true}}'}
         request = requests.get(url, headers=header, params=params)
-        self.thermostats = request.json()['thermostatList']
+        if request.status_code == requests.codes.ok:
+            self.thermostats = request.json()['thermostatList']
+        else:
+            self.refresh_tokens()
+            self.get_thermostats()
 
     def get_thermostat(self, index):
         ''' Return a single thermostat based on index '''
-        self.update()
         return self.thermostats[index]
 
     def set_hvac_mode(self, hvac_mode):
@@ -117,7 +124,11 @@ class Ecobee(object):
         params = {'format': 'json'}
         body = '{"selection":{"selectionType":"registered","selectionMatch":""},"thermostat":{"settings":{"hvacMode":"' + hvac_mode + '"}}}'
         request = requests.post(url, headers=header, params=params, data=body)
-        return request
+        if request.status_code == requests.codes.ok:
+            return request
+        else:
+            self.refresh_tokens()
+            self.set_hvac_mode(hvac_mode)
 
     def set_hold_temp(self, cool_temp, heat_temp, hold_type="nextTransition"):
         ''' Set a hold '''
@@ -128,7 +139,11 @@ class Ecobee(object):
         body = '{"functions":[{"type":"setHold","params":{"holdType":"' + hold_type + '","coolHoldTemp":"' + str(
             cool_temp * 10) + '","heatHoldTemp":"' + str(heat_temp * 10) + '"}}],"selection":{"selectionType":"registered","selectionMatch":""}}'
         request = requests.post(url, headers=header, params=params, data=body)
-        return request
+        if request.status_code == requests.codes.ok:
+            return request
+        else:
+            self.refresh_tokens()
+            self.set_hold_temp(cool_temp, heat_temp, hold_type)
 
     def set_climate_hold(self, climate, hold_type="nextTransition"):
         ''' Set a climate hold - ie away, home, sleep '''
@@ -140,7 +155,11 @@ class Ecobee(object):
             climate + \
             '"}}],"selection":{"selectionType":"registered","selectionMatch":""}}'
         request = requests.post(url, headers=header, params=params, data=body)
-        return request
+        if request.status_code == requests.codes.ok:
+            return request
+        else:
+            self.refresh_tokens()
+            self.set_climate_hold(climate, hold_type)
 
     def resume_program(self, resume_all="false"):
         ''' Resume currently scheduled program '''
@@ -152,7 +171,11 @@ class Ecobee(object):
             resume_all + \
             '"}}],"selection":{"selectionType":"registered","selectionMatch":""}}'
         request = requests.post(url, headers=header, params=params, data=body)
-        return request
+        if request.status_code == requests.codes.ok:
+            return request
+        else:
+            self.refresh_tokens()
+            self.resume_program(resume_all)
 
     def get_remote_sensors(self):
         ''' Get remote sensor data and store in sensors '''
@@ -173,19 +196,18 @@ class Ecobee(object):
         except IOError:
             print("Error retrieving remote sensor data.")
 
-    def write_tokens_to_file(self):
+    def write_tokens_to_file(self, write_sensors=False):
         ''' Write api tokens to a file '''
         config = dict()
         config['API_KEY'] = self.api_key
         config['ACCESS_TOKEN'] = self.access_token
         config['REFRESH_TOKEN'] = self.refresh_token
         config['AUTHORIZATION_CODE'] = self.authorization_code
-        config['sensors'] = self.sensors
+        if write_sensors:
+            config['sensors'] = self.sensors
         config_from_file(self.config_filename, config)
 
     def update(self):
-        ''' Refresh tokens and thermostat data from ecobee '''
-        self.refresh_tokens()
+        ''' Get new thermostat data from ecobee '''
         self.get_thermostats()
         self.get_remote_sensors()
-        self.write_tokens_to_file()

@@ -31,8 +31,8 @@ class Ecobee(object):
     ''' Class for storing Ecobee Thermostats and Sensors '''
 
     def __init__(self, config_filename=None, api_key=None):
-        self.sensors = dict()
         self.thermostats = list()
+        self.sensors = list()
         self.pin = None
         if config_filename is None:
             if api_key is None:
@@ -109,12 +109,16 @@ class Ecobee(object):
         if request.status_code == requests.codes.ok:
             self.thermostats = request.json()['thermostatList']
         else:
+            print("Error connecting to Ecobee.  Refreshing tokens...")
             self.refresh_tokens()
-            self.get_thermostats()
 
     def get_thermostat(self, index):
         ''' Return a single thermostat based on index '''
         return self.thermostats[index]
+
+    def get_remote_sensors(self, index):
+        ''' Get remote sensor data and store in sensors '''
+        return self.thermostats[index]['remoteSensors']
 
     def set_hvac_mode(self, hvac_mode):
         ''' possible hvac modes are auto, auxHeatOnly, cool, heat, off '''
@@ -177,25 +181,6 @@ class Ecobee(object):
             self.refresh_tokens()
             self.resume_program(resume_all)
 
-    def get_remote_sensors(self):
-        ''' Get remote sensor data and store in sensors '''
-        try:
-            json_sensors = self.thermostats[0]['remoteSensors']
-            sensors = dict()
-            for sensor in json_sensors:
-                sensor_info = dict()
-                for item in sensor['capability']:
-                    if item['type'] == 'temperature':
-                        sensor_info['temp'] = float(item['value']) / 10
-                    elif item['type'] == 'humidity':
-                        sensor_info['humidity'] = item['value']
-                    elif item['type'] == 'occupancy':
-                        sensor_info['occupancy'] = item['value']
-                sensors[sensor['name']] = sensor_info
-            self.sensors = sensors
-        except IOError:
-            print("Error retrieving remote sensor data.")
-
     def write_tokens_to_file(self, write_sensors=False):
         ''' Write api tokens to a file '''
         config = dict()
@@ -210,4 +195,4 @@ class Ecobee(object):
     def update(self):
         ''' Get new thermostat data from ecobee '''
         self.get_thermostats()
-        self.get_remote_sensors()
+

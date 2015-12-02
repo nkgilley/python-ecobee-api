@@ -96,6 +96,7 @@ class Ecobee(object):
             self.access_token = request.json()['access_token']
             self.refresh_token = request.json()['refresh_token']
             self.write_tokens_to_file()
+            return True
         else:
             self.request_pin()
 
@@ -109,8 +110,9 @@ class Ecobee(object):
         if request.status_code == requests.codes.ok:
             self.thermostats = request.json()['thermostatList']
         else:
-            print("Error connecting to Ecobee while attempting to get thermostat data.  Refreshing tokens...")
-            self.refresh_tokens()
+            print("Error connecting to Ecobee while attempting to get thermostat data.  Refreshing tokens and trying again.")
+            if self.refresh_tokens():
+                self.get_thermostats()
 
     def get_thermostat(self, index):
         ''' Return a single thermostat based on index '''

@@ -109,7 +109,7 @@ class Ecobee(object):
         if request.status_code == requests.codes.ok:
             self.thermostats = request.json()['thermostatList']
         else:
-            print("Error connecting to Ecobee.  Refreshing tokens...")
+            print("Error connecting to Ecobee while attempting to get thermostat data.  Refreshing tokens...")
             self.refresh_tokens()
 
     def get_thermostat(self, index):
@@ -120,36 +120,36 @@ class Ecobee(object):
         ''' Get remote sensor data and store in sensors '''
         return self.thermostats[index]['remoteSensors']
 
-    def set_hvac_mode(self, hvac_mode):
+    def set_hvac_mode(self, index, hvac_mode):
         ''' possible hvac modes are auto, auxHeatOnly, cool, heat, off '''
         url = 'https://api.ecobee.com/1/thermostat'
         header = {'Content-Type': 'application/json;charset=UTF-8',
                   'Authorization': 'Bearer ' + self.access_token}
         params = {'format': 'json'}
-        body = '{"selection":{"selectionType":"registered","selectionMatch":""},"thermostat":{"settings":{"hvacMode":"' + hvac_mode + '"}}}'
+        body = '{"selection":{"selectionType":"thermostats","selectionMatch":"' + self.thermostats[index]['identifier'] + '"},"thermostat":{"settings":{"hvacMode":"' + hvac_mode + '"}}}'
         request = requests.post(url, headers=header, params=params, data=body)
         if request.status_code == requests.codes.ok:
             return request
         else:
+            print("Error connecting to Ecobee while attempting to set HVAC mode.  Refreshing tokens...")
             self.refresh_tokens()
-            self.set_hvac_mode(hvac_mode)
 
-    def set_hold_temp(self, cool_temp, heat_temp, hold_type="nextTransition"):
+    def set_hold_temp(self, index, cool_temp, heat_temp, hold_type="nextTransition"):
         ''' Set a hold '''
         url = 'https://api.ecobee.com/1/thermostat'
         header = {'Content-Type': 'application/json;charset=UTF-8',
                   'Authorization': 'Bearer ' + self.access_token}
         params = {'format': 'json'}
         body = '{"functions":[{"type":"setHold","params":{"holdType":"' + hold_type + '","coolHoldTemp":"' + str(
-            cool_temp * 10) + '","heatHoldTemp":"' + str(heat_temp * 10) + '"}}],"selection":{"selectionType":"registered","selectionMatch":""}}'
+            cool_temp * 10) + '","heatHoldTemp":"' + str(heat_temp * 10) + '"}}],"selection":{"selectionType":"thermostats","selectionMatch":"' + self.thermostats[index]['identifier'] + '"}}'
         request = requests.post(url, headers=header, params=params, data=body)
         if request.status_code == requests.codes.ok:
             return request
         else:
+            print("Error connecting to Ecobee while attempting to set hold temp.  Refreshing tokens...")
             self.refresh_tokens()
-            self.set_hold_temp(cool_temp, heat_temp, hold_type)
 
-    def set_climate_hold(self, climate, hold_type="nextTransition"):
+    def set_climate_hold(self, index, climate, hold_type="nextTransition"):
         ''' Set a climate hold - ie away, home, sleep '''
         url = 'https://api.ecobee.com/1/thermostat'
         header = {'Content-Type': 'application/json;charset=UTF-8',
@@ -157,15 +157,15 @@ class Ecobee(object):
         params = {'format': 'json'}
         body = '{"functions":[{"type":"setHold","params":{"holdType":"' + hold_type + '","holdClimateRef":"' + \
             climate + \
-            '"}}],"selection":{"selectionType":"registered","selectionMatch":""}}'
+            '"}}],"selection":{"selectionType":"thermostats","selectionMatch":"' + self.thermostats[index]['identifier'] + '"}}'
         request = requests.post(url, headers=header, params=params, data=body)
         if request.status_code == requests.codes.ok:
             return request
         else:
+            print("Error connecting to Ecobee while attempting to set climate hold.  Refreshing tokens...")
             self.refresh_tokens()
-            self.set_climate_hold(climate, hold_type)
 
-    def resume_program(self, resume_all="false"):
+    def resume_program(self, index, resume_all="false"):
         ''' Resume currently scheduled program '''
         url = 'https://api.ecobee.com/1/thermostat'
         header = {'Content-Type': 'application/json;charset=UTF-8',
@@ -173,13 +173,13 @@ class Ecobee(object):
         params = {'format': 'json'}
         body = '{"functions":[{"type":"resumeProgram","params":{"resumeAll":"' + \
             resume_all + \
-            '"}}],"selection":{"selectionType":"registered","selectionMatch":""}}'
+            '"}}],"selection":{"selectionType":"thermostats","selectionMatch":"' + self.thermostats[index]['identifier'] + '"}}'
         request = requests.post(url, headers=header, params=params, data=body)
         if request.status_code == requests.codes.ok:
             return request
         else:
+            print("Error connecting to Ecobee while attempting to resume program.  Refreshing tokens...")
             self.refresh_tokens()
-            self.resume_program(resume_all)
 
     def write_tokens_to_file(self, write_sensors=False):
         ''' Write api tokens to a file '''

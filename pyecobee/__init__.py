@@ -183,15 +183,13 @@ class Ecobee(object):
             print("Error connecting to Ecobee while attempting to resume program.  Refreshing tokens...")
             self.refresh_tokens()
 
-    def write_tokens_to_file(self, write_sensors=False):
+    def write_tokens_to_file(self):
         ''' Write api tokens to a file '''
         config = dict()
         config['API_KEY'] = self.api_key
         config['ACCESS_TOKEN'] = self.access_token
         config['REFRESH_TOKEN'] = self.refresh_token
         config['AUTHORIZATION_CODE'] = self.authorization_code
-        if write_sensors:
-            config['sensors'] = self.sensors
         config_from_file(self.config_filename, config)
 
     def update(self):

@@ -65,9 +65,9 @@ class Ecobee(object):
         self.pin = request.json()['ecobeePin']
         print('Please authorize your ecobee developer app with PIN code '
               + self.pin + '\nGoto https://www.ecobee.com/consumerportal'
-              + '/index.html, click\nMy Apps, Add application, Enter Pin'
-              + ' and click Authorize.\nAfter authorizing, call request_'
-              + 'tokens() method.')
+              '/index.html, click\nMy Apps, Add application, Enter Pin'
+              ' and click Authorize.\nAfter authorizing, call request_'
+              'tokens() method.')
 
     def request_tokens(self):
         ''' Method to request API tokens from ecobee '''
@@ -82,7 +82,7 @@ class Ecobee(object):
             self.pin = None
         else:
             print('Error while requesting tokens from ecobee.com.'
-                  + ' Status code: ' + str(request.status_code))
+                  ' Status code: ' + str(request.status_code))
             return
 
     def refresh_tokens(self):
@@ -114,7 +114,7 @@ class Ecobee(object):
             self.thermostats = request.json()['thermostatList']
         else:
             print("Error connecting to Ecobee while attempting to get "
-                  + "thermostat data.  Refreshing tokens and trying again.")
+                  "thermostat data.  Refreshing tokens and trying again.")
             if self.refresh_tokens():
                 self.get_thermostats()
 
@@ -133,15 +133,15 @@ class Ecobee(object):
                   'Authorization': 'Bearer ' + self.access_token}
         params = {'format': 'json'}
         body = ('{"selection":{"selectionType":"thermostats","selectionMatch":'
-                '"' + self.thermostats[index]['identifier']
-                + '"},"thermostat":{"settings":{"hvacMode":"'
-                + hvac_mode + '"}}}')
+                '"' + self.thermostats[index]['identifier'] +
+                '"},"thermostat":{"settings":{"hvacMode":"' + hvac_mode +
+                '"}}}')
         request = requests.post(url, headers=header, params=params, data=body)
         if request.status_code == requests.codes.ok:
             return request
         else:
             print("Error connecting to Ecobee while attempting to set"
-                  + " HVAC mode.  Refreshing tokens...")
+                  " HVAC mode.  Refreshing tokens...")
             self.refresh_tokens()
 
     def set_hold_temp(self, index, cool_temp, heat_temp,
@@ -152,8 +152,8 @@ class Ecobee(object):
                   'Authorization': 'Bearer ' + self.access_token}
         params = {'format': 'json'}
         body = ('{"functions":[{"type":"setHold","params":{"holdType":"'
-                + hold_type + '","coolHoldTemp":"' + str(cool_temp * 10)
-                + '","heatHoldTemp":"' + str(heat_temp * 10) + '"}}],'
+                + hold_type + '","coolHoldTemp":"' + str(cool_temp * 10) +
+                '","heatHoldTemp":"' + str(heat_temp * 10) + '"}}],'
                 '"selection":{"selectionType":"thermostats","selectionMatch"'
                 ':"' + self.thermostats[index]['identifier'] + '"}}')
         request = requests.post(url, headers=header, params=params, data=body)
@@ -161,7 +161,7 @@ class Ecobee(object):
             return request
         else:
             print("Error connecting to Ecobee while attempting to set"
-                  + " hold temp.  Refreshing tokens...")
+                  " hold temp.  Refreshing tokens...")
             self.refresh_tokens()
 
     def set_climate_hold(self, index, climate, hold_type="nextTransition"):
@@ -179,7 +179,7 @@ class Ecobee(object):
             return request
         else:
             print("Error connecting to Ecobee while attempting to set"
-                  + " climate hold.  Refreshing tokens...")
+                  " climate hold.  Refreshing tokens...")
             self.refresh_tokens()
 
     def resume_program(self, index, resume_all="false"):
@@ -197,7 +197,7 @@ class Ecobee(object):
             return request
         else:
             print("Error connecting to Ecobee while attempting to resume"
-                  + " program.  Refreshing tokens...")
+                  " program.  Refreshing tokens...")
             self.refresh_tokens()
 
     def write_tokens_to_file(self):

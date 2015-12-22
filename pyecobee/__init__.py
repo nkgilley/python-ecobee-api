@@ -30,17 +30,21 @@ def config_from_file(filename, config=None):
 class Ecobee(object):
     ''' Class for storing Ecobee Thermostats and Sensors '''
 
-    def __init__(self, config_filename=None, api_key=None):
+    def __init__(self, config_filename=None, api_key=None, config=None):
         self.thermostats = list()
         self.pin = None
-        if config_filename is None:
-            if api_key is None:
-                print("Error. No API Key was supplied.")
-                return
-            jsonconfig = {"API_KEY": api_key}
-            config_filename = 'ecobee.conf'
-            config_from_file(config_filename, jsonconfig)
-        config = config_from_file(config_filename)
+        if config is None:
+            self.file_based_config = True
+            if config_filename is None:
+                if api_key is None:
+                    print("Error. No API Key was supplied.")
+                    return
+                jsonconfig = {"API_KEY": api_key}
+                config_filename = 'ecobee.conf'
+                config_from_file(config_filename, jsonconfig)
+            config = config_from_file(config_filename)
+        else:
+            self.file_based_config = False
         self.api_key = config['API_KEY']
         self.config_filename = config_filename
         if 'ACCESS_TOKEN' in config:
@@ -207,7 +211,10 @@ class Ecobee(object):
         config['ACCESS_TOKEN'] = self.access_token
         config['REFRESH_TOKEN'] = self.refresh_token
         config['AUTHORIZATION_CODE'] = self.authorization_code
-        config_from_file(self.config_filename, config)
+        if self.file_based_config:
+            config_from_file(self.config_filename, config)
+        else:
+            self.config = config
 
     def update(self):
         ''' Get new thermostat data from ecobee '''

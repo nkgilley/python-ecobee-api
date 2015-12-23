@@ -57,7 +57,7 @@ class Ecobee(object):
             self.authorization_code = config['AUTHORIZATION_CODE']
         else:
             self.authorization_code = ''
-            
+
         if 'REFRESH_TOKEN' in config:
             self.refresh_token = config['REFRESH_TOKEN']
         else:
@@ -124,11 +124,14 @@ class Ecobee(object):
         request = requests.get(url, headers=header, params=params)
         if request.status_code == requests.codes.ok:
             self.thermostats = request.json()['thermostatList']
+            return self.thermostats
         else:
             print("Error connecting to Ecobee while attempting to get "
                   "thermostat data.  Refreshing tokens and trying again.")
             if self.refresh_tokens():
-                self.get_thermostats()
+                return self.get_thermostats()
+            else:
+                return None
 
     def get_thermostat(self, index):
         ''' Return a single thermostat based on index '''

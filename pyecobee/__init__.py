@@ -33,6 +33,8 @@ class Ecobee(object):
     def __init__(self, config_filename=None, api_key=None, config=None):
         self.thermostats = list()
         self.pin = None
+        self.authenticated = False
+
         if config is None:
             self.file_based_config = True
             if config_filename is None:
@@ -123,9 +125,11 @@ class Ecobee(object):
                            ':true,"includeSettings":true}}')}
         request = requests.get(url, headers=header, params=params)
         if request.status_code == requests.codes.ok:
+            self.authenticated = True
             self.thermostats = request.json()['thermostatList']
             return self.thermostats
         else:
+            self.authenticated = False
             print("Error connecting to Ecobee while attempting to get "
                   "thermostat data.  Refreshing tokens and trying again.")
             if self.refresh_tokens():

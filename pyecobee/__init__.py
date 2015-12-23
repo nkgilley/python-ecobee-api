@@ -47,13 +47,21 @@ class Ecobee(object):
             self.file_based_config = False
         self.api_key = config['API_KEY']
         self.config_filename = config_filename
+
         if 'ACCESS_TOKEN' in config:
             self.access_token = config['ACCESS_TOKEN']
+        else:
+            self.access_token = ''
+
         if 'AUTHORIZATION_CODE' in config:
             self.authorization_code = config['AUTHORIZATION_CODE']
+        else:
+            self.authorization_code = ''
+            
         if 'REFRESH_TOKEN' in config:
             self.refresh_token = config['REFRESH_TOKEN']
         else:
+            self.refresh_token = ''
             self.request_pin()
             return
 

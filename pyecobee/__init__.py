@@ -30,26 +30,40 @@ def config_from_file(filename, config=None):
 class Ecobee(object):
     ''' Class for storing Ecobee Thermostats and Sensors '''
 
-    def __init__(self, config_filename=None, api_key=None):
+    def __init__(self, config_filename=None, api_key=None, config=None):
         self.thermostats = list()
         self.pin = None
-        if config_filename is None:
-            if api_key is None:
-                print("Error. No API Key was supplied.")
-                return
-            jsonconfig = {"API_KEY": api_key}
-            config_filename = 'ecobee.conf'
-            config_from_file(config_filename, jsonconfig)
-        config = config_from_file(config_filename)
+        self.authenticated = False
+
+        if config is None:
+            self.file_based_config = True
+            if config_filename is None:
+                if api_key is None:
+                    print("Error. No API Key was supplied.")
+                    return
+                jsonconfig = {"API_KEY": api_key}
+                config_filename = 'ecobee.conf'
+                config_from_file(config_filename, jsonconfig)
+            config = config_from_file(config_filename)
+        else:
+            self.file_based_config = False
         self.api_key = config['API_KEY']
         self.config_filename = config_filename
+
         if 'ACCESS_TOKEN' in config:
             self.access_token = config['ACCESS_TOKEN']
+        else:
+            self.access_token = ''
+
         if 'AUTHORIZATION_CODE' in config:
             self.authorization_code = config['AUTHORIZATION_CODE']
+        else:
+            self.authorization_code = ''
+
         if 'REFRESH_TOKEN' in config:
             self.refresh_token = config['REFRESH_TOKEN']
         else:
+            self.refresh_token = ''
             self.request_pin()
             return
 
@@ -111,12 +125,17 @@ class Ecobee(object):
                            ':true,"includeSettings":true}}')}
         request = requests.get(url, headers=header, params=params)
         if request.status_code == requests.codes.ok:
+            self.authenticated = True
             self.thermostats = request.json()['thermostatList']
+            return self.thermostats
         else:
+            self.authenticated = False
             print("Error connecting to Ecobee while attempting to get "
                   "thermostat data.  Refreshing tokens and trying again.")
             if self.refresh_tokens():
-                self.get_thermostats()
+                return self.get_thermostats()
+            else:
+                return None
 
     def get_thermostat(self, index):
         ''' Return a single thermostat based on index '''
@@ -207,7 +226,10 @@ class Ecobee(object):
         config['ACCESS_TOKEN'] = self.access_token
         config['REFRESH_TOKEN'] = self.refresh_token
         config['AUTHORIZATION_CODE'] = self.authorization_code
-        config_from_file(self.config_filename, config)
+        if self.file_based_config:
+            config_from_file(self.config_filename, config)
+        else:
+            self.config = config
 
     def update(self):
         ''' Get new thermostat data from ecobee '''

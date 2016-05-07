@@ -122,7 +122,7 @@ class Ecobee(object):
         params = {'json': ('{"selection":{"selectionType":"registered",'
                            '"includeRuntime":"true","includeSensors":"true",'
                            '"includeProgram":"true","includeEquipmentStatus"'
-                           ':true,"includeSettings":true}}')}
+                           ':"true","includeEvents":"true","includeSettings":"true"}}')}
         request = requests.get(url, headers=header, params=params)
         if request.status_code == requests.codes.ok:
             self.authenticated = True

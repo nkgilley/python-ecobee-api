@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='python-ecobee',
-      version='0.0.4',
+      version='0.0.5',
       description='Python API for talking to Ecobee thermostats',
       url='https://github.com/nkgilley/python-ecobee-api',
       author='Nolan Gilley',

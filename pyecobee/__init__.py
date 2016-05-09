@@ -222,6 +222,24 @@ class Ecobee(object):
                   " program.  Refreshing tokens...")
             self.refresh_tokens()
 
+    def send_message(self, index, message="Hello from python-ecobee!"):
+        ''' Send a message to the thermostat '''
+        url = 'https://api.ecobee.com/1/thermostat'
+        header = {'Content-Type': 'application/json;charset=UTF-8',
+                  'Authorization': 'Bearer ' + self.access_token}
+        params = {'format': 'json'}
+        body = ('{"functions":[{"type":"sendMessage","params":{"text"'
+                ':"' + message[0:500] + '"}}],"selection":{"selectionType"'
+                ':"thermostats","selectionMatch":"'
+                + self.thermostats[index]['identifier'] + '"}}')
+        request = requests.post(url, headers=header, params=params, data=body)
+        if request.status_code == requests.codes.ok:
+            return request
+        else:
+            print("Error connecting to Ecobee while attempting to send"
+                  " message.  Refreshing tokens...")
+            self.refresh_tokens()
+
     def write_tokens_to_file(self):
         ''' Write api tokens to a file '''
         config = dict()

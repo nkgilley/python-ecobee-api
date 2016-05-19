@@ -166,6 +166,24 @@ class Ecobee(object):
                   " HVAC mode.  Refreshing tokens...")
             self.refresh_tokens()
 
+    def set_fan_min_on_time(self, index, fan_min_on_time):
+        ''' The minimum time, in minutes, to run the fan each hour. Value from 1 to 60 '''
+        url = 'https://api.ecobee.com/1/thermostat'
+        header = {'Content-Type': 'application/json;charset=UTF-8',
+                  'Authorization': 'Bearer ' + self.access_token}
+        params = {'format': 'json'}
+        body = ('{"selection":{"selectionType":"thermostats","selectionMatch":'
+                '"' + self.thermostats[index]['identifier'] +
+                '"},"thermostat":{"settings":{"fanMinOnTime":"' + fan_min_on_time +
+                '"}}}')
+        request = requests.post(url, headers=header, params=params, data=body)
+        if request.status_code == requests.codes.ok:
+            return request
+        else:
+            print("Error connecting to Ecobee while attempting to set"
+                  " fan minimum on time.  Refreshing tokens...")
+            self.refresh_tokens()
+
     def set_hold_temp(self, index, cool_temp, heat_temp,
                       hold_type="nextTransition"):
         ''' Set a hold '''

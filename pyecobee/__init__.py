@@ -201,7 +201,7 @@ class Ecobee(object):
             return request
         else:
             print("Error connecting to Ecobee while attempting to set"
-                  " fan minimum on time.  Refreshing tokens...")
+                  " fan mode.  Refreshing tokens...")
             self.refresh_tokens()
 
     def set_hold_temp(self, index, cool_temp, heat_temp,

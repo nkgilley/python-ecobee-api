@@ -185,7 +185,7 @@ class Ecobee(object):
             self.refresh_tokens()
 
     def set_fan_mode(self, index, fan_mode):
-        ''' The minimum time, in minutes, to run the fan each hour. Values: auto, minontime, on, off '''
+        ''' Set fan mode. Values: auto, minontime, on '''
         if fan_mode == 'off':  # To prevent fan off with cool/heat on
             return
         url = 'https://api.ecobee.com/1/thermostat'

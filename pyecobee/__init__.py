@@ -222,6 +222,24 @@ class Ecobee(object):
                   " climate hold.  Refreshing tokens...")
             self.refresh_tokens()
 
+    def delete_vacation(self, index, vacation):
+        ''' Delete the vacation with name vacation '''
+        url = 'https://api.ecobee.com/1/thermostat'
+        header = {'Content-Type': 'application/json;charset=UTF-8',
+                  'Authorization': 'Bearer ' + self.access_token}
+        params = {'format': 'json'}
+        body = ('{"functions":[{"type":"deleteVacation","params":{"name":"'
+                + vacation + '"}}],'
+                '"selection":{"selectionType":"registered","selectionMatch":"'
+                '"}}')
+        request = requests.post(url, headers=header, params=params, data=body)
+        if request.status_code == requests.codes.ok:
+            return request
+        else:
+            print("Error connecting to Ecobee while attempting to delete"
+                  " a vacation.  Refreshing tokens...")
+            self.refresh_tokens()
+
     def resume_program(self, index, resume_all="false"):
         ''' Resume currently scheduled program '''
         url = 'https://api.ecobee.com/1/thermostat'

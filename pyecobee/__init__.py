@@ -2,6 +2,9 @@
 import requests
 import json
 import os
+import logging
+
+logger = logging.getLogger('pyecobee')
 
 
 def config_from_file(filename, config=None):
@@ -12,7 +15,7 @@ def config_from_file(filename, config=None):
             with open(filename, 'w') as fdesc:
                 fdesc.write(json.dumps(config))
         except IOError as error:
-            print(error)
+            logger.exception(error)
             return False
         return True
     else:
@@ -39,7 +42,7 @@ class Ecobee(object):
             self.file_based_config = True
             if config_filename is None:
                 if api_key is None:
-                    print("Error. No API Key was supplied.")
+                    logger.error("Error. No API Key was supplied.")
                     return
                 jsonconfig = {"API_KEY": api_key}
                 config_filename = 'ecobee.conf'
@@ -77,7 +80,7 @@ class Ecobee(object):
         request = requests.get(url, params=params)
         self.authorization_code = request.json()['code']
         self.pin = request.json()['ecobeePin']
-        print('Please authorize your ecobee developer app with PIN code '
+        logger.error('Please authorize your ecobee developer app with PIN code '
               + self.pin + '\nGoto https://www.ecobee.com/consumerportal'
               '/index.html, click\nMy Apps, Add application, Enter Pin'
               ' and click Authorize.\nAfter authorizing, call request_'
@@ -95,7 +98,7 @@ class Ecobee(object):
             self.write_tokens_to_file()
             self.pin = None
         else:
-            print('Error while requesting tokens from ecobee.com.'
+            logger.warn('Error while requesting tokens from ecobee.com.'
                   ' Status code: ' + str(request.status_code))
             return
 
@@ -133,7 +136,7 @@ class Ecobee(object):
             return self.thermostats
         else:
             self.authenticated = False
-            print("Error connecting to Ecobee while attempting to get "
+            logger.warn("Error connecting to Ecobee while attempting to get "
                   "thermostat data.  Refreshing tokens and trying again.")
             if self.refresh_tokens():
                 return self.get_thermostats()
@@ -162,7 +165,7 @@ class Ecobee(object):
         if request.status_code == requests.codes.ok:
             return request
         else:
-            print("Error connecting to Ecobee while attempting to set"
+            logger.warn("Error connecting to Ecobee while attempting to set"
                   " HVAC mode.  Refreshing tokens...")
             self.refresh_tokens()
 
@@ -180,7 +183,7 @@ class Ecobee(object):
         if request.status_code == requests.codes.ok:
             return request
         else:
-            print("Error connecting to Ecobee while attempting to set"
+            logger.warn("Error connecting to Ecobee while attempting to set"
                   " fan minimum on time.  Refreshing tokens...")
             self.refresh_tokens()
 
@@ -200,7 +203,7 @@ class Ecobee(object):
         if request.status_code == requests.codes.ok:
             return request
         else:
-            print("Error connecting to Ecobee while attempting to set"
+            logger.warn("Error connecting to Ecobee while attempting to set"
                   " hold temp.  Refreshing tokens...")
             self.refresh_tokens()
 
@@ -218,7 +221,7 @@ class Ecobee(object):
         if request.status_code == requests.codes.ok:
             return request
         else:
-            print("Error connecting to Ecobee while attempting to set"
+            logger.warn("Error connecting to Ecobee while attempting to set"
                   " climate hold.  Refreshing tokens...")
             self.refresh_tokens()
 
@@ -236,7 +239,7 @@ class Ecobee(object):
         if request.status_code == requests.codes.ok:
             return request
         else:
-            print("Error connecting to Ecobee while attempting to delete"
+            logger.warn("Error connecting to Ecobee while attempting to delete"
                   " a vacation.  Refreshing tokens...")
             self.refresh_tokens()
 
@@ -254,7 +257,7 @@ class Ecobee(object):
         if request.status_code == requests.codes.ok:
             return request
         else:
-            print("Error connecting to Ecobee while attempting to resume"
+            logger.warn("Error connecting to Ecobee while attempting to resume"
                   " program.  Refreshing tokens...")
             self.refresh_tokens()
 
@@ -272,7 +275,7 @@ class Ecobee(object):
         if request.status_code == requests.codes.ok:
             return request
         else:
-            print("Error connecting to Ecobee while attempting to send"
+            logger.warn("Error connecting to Ecobee while attempting to send"
                   " message.  Refreshing tokens...")
             self.refresh_tokens()
 

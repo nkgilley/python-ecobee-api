@@ -194,11 +194,19 @@ class Ecobee(object):
         header = {'Content-Type': 'application/json;charset=UTF-8',
                   'Authorization': 'Bearer ' + self.access_token}
         params = {'format': 'json'}
-        body = ('{"functions":[{"type":"setHold","params":{"holdType":"'
-                + hold_type + '","coolHoldTemp":"' + str(cool_temp * 10) +
-                '","heatHoldTemp":"' + str(heat_temp * 10) + '"}}],'
-                '"selection":{"selectionType":"thermostats","selectionMatch"'
-                ':"' + self.thermostats[index]['identifier'] + '"}}')
+        ''' allow holdHours hold type, use 2 hours for length '''
+        if hold_type == 'holdHours':
+            body = ('{"functions":[{"type":"setHold","params":{"holdType":"'
+                    + hold_type + '","coolHoldTemp":"' + str(cool_temp * 10) +
+                    '","heatHoldTemp":"' + str(heat_temp * 10) + '","holdHours":"2"}}],'
+                    '"selection":{"selectionType":"thermostats","selectionMatch"'
+                    ':"' + self.thermostats[index]['identifier'] + '"}}')
+        else:
+            body = ('{"functions":[{"type":"setHold","params":{"holdType":"'
+                    + hold_type + '","coolHoldTemp":"' + str(cool_temp * 10) +
+                    '","heatHoldTemp":"' + str(heat_temp * 10) + '"}}],'
+                    '"selection":{"selectionType":"thermostats","selectionMatch"'
+                    ':"' + self.thermostats[index]['identifier'] + '"}}')
         request = requests.post(url, headers=header, params=params, data=body)
         if request.status_code == requests.codes.ok:
             return request

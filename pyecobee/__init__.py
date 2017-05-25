@@ -269,8 +269,12 @@ class Ecobee(object):
                   " program.  Refreshing tokens...")
             self.refresh_tokens()
 
-    def send_message(self, index, message="Hello from python-ecobee!"):
+    def send_message(self, index, message="Hello from python-ecobee!", thermostatID=''):
         ''' Send a message to the thermostat '''
+        if thermostatID != '':
+            msg_thermostat_identifier = thermostatID
+        else:
+            msg_thermostat_identifier = self.thermostats[index]['identifier']
         url = 'https://api.ecobee.com/1/thermostat'
         header = {'Content-Type': 'application/json;charset=UTF-8',
                   'Authorization': 'Bearer ' + self.access_token}
@@ -278,7 +282,7 @@ class Ecobee(object):
         body = ('{"functions":[{"type":"sendMessage","params":{"text"'
                 ':"' + message[0:500] + '"}}],"selection":{"selectionType"'
                 ':"thermostats","selectionMatch":"'
-                + self.thermostats[index]['identifier'] + '"}}')
+                + msg_thermostat_identifier + '"}}')
         request = requests.post(url, headers=header, params=params, data=body)
         if request.status_code == requests.codes.ok:
             return request

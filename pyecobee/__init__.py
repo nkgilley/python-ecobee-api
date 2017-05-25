@@ -201,9 +201,7 @@ class Ecobee(object):
                     '","heatHoldTemp":"' + str(heat_temp * 10) + '","holdHours":"2"}}],'
                     '"selection":{"selectionType":"thermostats","selectionMatch"'
                     ':"' + self.thermostats[index]['identifier'] + '"}}')
-        ''' otherwise, use nextTransition as hold type '''
         else:
-            hold_type = 'nextTransition'
             body = ('{"functions":[{"type":"setHold","params":{"holdType":"'
                     + hold_type + '","coolHoldTemp":"' + str(cool_temp * 10) +
                     '","heatHoldTemp":"' + str(heat_temp * 10) + '"}}],'

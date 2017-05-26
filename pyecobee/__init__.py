@@ -199,7 +199,7 @@ class Ecobee(object):
             body = ('{"functions":[{"type":"setHold","params":{"holdType":"'
                     + hold_type + '","coolHoldTemp":"' + str(cool_temp * 10) +
                     '","heatHoldTemp":"' + str(heat_temp * 10) + 
-                    '","holdHours":"' + hold_hours + '"}}],'
+                    '","holdHours":"' + str(hold_hours) + '"}}],'
                     '"selection":{"selectionType":"thermostats","selectionMatch"'
                     ':"' + self.thermostats[index]['identifier'] + '"}}')
         else:

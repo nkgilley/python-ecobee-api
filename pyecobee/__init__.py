@@ -188,7 +188,7 @@ class Ecobee(object):
             self.refresh_tokens()
 
     def set_hold_temp(self, index, cool_temp, heat_temp,
-                      hold_type="nextTransition"):
+                      hold_type="nextTransition", hold_hours=2):
         ''' Set a hold '''
         url = 'https://api.ecobee.com/1/thermostat'
         header = {'Content-Type': 'application/json;charset=UTF-8',
@@ -198,7 +198,8 @@ class Ecobee(object):
         if hold_type == 'holdHours':
             body = ('{"functions":[{"type":"setHold","params":{"holdType":"'
                     + hold_type + '","coolHoldTemp":"' + str(cool_temp * 10) +
-                    '","heatHoldTemp":"' + str(heat_temp * 10) + '","holdHours":"2"}}],'
+                    '","heatHoldTemp":"' + str(heat_temp * 10) + 
+                    '","holdHours":"' + str(hold_hours) + '"}}],'
                     '"selection":{"selectionType":"thermostats","selectionMatch"'
                     ':"' + self.thermostats[index]['identifier'] + '"}}')
         else:

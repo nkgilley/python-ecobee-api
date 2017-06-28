@@ -194,7 +194,7 @@ class Ecobee(object):
         header = {'Content-Type': 'application/json;charset=UTF-8',
                   'Authorization': 'Bearer ' + self.access_token}
         params = {'format': 'json'}
-        ''' allow holdHours hold type, use 2 hours for length '''
+        ''' allow holdHours hold type '''
         if hold_type == 'holdHours':
             body = ('{"functions":[{"type":"setHold","params":{"holdType":"'
                     + hold_type + '","coolHoldTemp":"' + str(cool_temp * 10) +

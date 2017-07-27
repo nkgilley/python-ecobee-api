@@ -136,7 +136,7 @@ class Ecobee(object):
             return self.thermostats
         else:
             self.authenticated = False
-            logger.warn("Error connecting to Ecobee while attempting to get "
+            logger.info("Error connecting to Ecobee while attempting to get "
                   "thermostat data.  Refreshing tokens and trying again.")
             if self.refresh_tokens():
                 return self.get_thermostats()

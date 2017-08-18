@@ -167,172 +167,92 @@ class Ecobee(object):
         ''' Get new thermostat data from ecobee '''
         self.get_thermostats()
 
-    def set_hvac_mode(self, index, hvac_mode):
-        ''' possible hvac modes are auto, auxHeatOnly, cool, heat, off '''
+    def make_request(self, body, log_msg_action):
         url = 'https://api.ecobee.com/1/thermostat'
         header = {'Content-Type': 'application/json;charset=UTF-8',
                   'Authorization': 'Bearer ' + self.access_token}
         params = {'format': 'json'}
+        request = requests.post(url, headers=header, params=params, data=body)
+        if request.status_code == requests.codes.ok:
+            return request
+        else:
+            logger.info("Error connecting to Ecobee while attempting to %s.  "
+                        "Refreshing tokens and trying again.", log_msg_action)
+            if self.refresh_tokens():
+                return self.make_request(body)
+            else:
+                return None
+
+    def set_hvac_mode(self, index, hvac_mode):
+        ''' possible hvac modes are auto, auxHeatOnly, cool, heat, off '''
         body = ('{"selection":{"selectionType":"thermostats","selectionMatch":'
                 '"' + self.thermostats[index]['identifier'] +
                 '"},"thermostat":{"settings":{"hvacMode":"' + hvac_mode +
                 '"}}}')
-        request = requests.post(url, headers=header, params=params, data=body)
-        if request.status_code == requests.codes.ok:
-            return request
-        else:
-            logger.info("Error connecting to Ecobee while attempting to set"
-                  " HVAC mode.  Refreshing tokens and trying again.")
-            if self.refresh_tokens():
-                return self.set_hvac_mode(index, hvac_mode)
-            else:
-                return None
+        log_msg_action = "set HVAC mode"
+        return make_request(body, log_msg_action)
 
     def set_fan_min_on_time(self, index, fan_min_on_time):
         ''' The minimum time, in minutes, to run the fan each hour. Value from 1 to 60 '''
-        url = 'https://api.ecobee.com/1/thermostat'
-        header = {'Content-Type': 'application/json;charset=UTF-8',
-                  'Authorization': 'Bearer ' + self.access_token}
-        params = {'format': 'json'}
         body = ('{"selection":{"selectionType":"thermostats","selectionMatch":'
                 '"' + self.thermostats[index]['identifier'] +
                 '"},"thermostat":{"settings":{"fanMinOnTime":"' + fan_min_on_time +
                 '"}}}')
-        request = requests.post(url, headers=header, params=params, data=body)
-        if request.status_code == requests.codes.ok:
-            return request
-        else:
-            logger.info("Error connecting to Ecobee while attempting to set"
-                  " fan minimum on time.  Refreshing tokens and trying again.")
-            if self.refresh_tokens():
-                return self.set_fan_min_on_time(index, fan_min_on_time):
-            else:
-                return None
+        log_msg_action = "set fan minimum on time."
+        return make_request(body, log_msg_action)
 
     def set_fan_mode(self, index, fan_mode):
         ''' Set fan mode. Values: auto, minontime, on '''
-        if fan_mode == 'off':  # To prevent fan off with cool/heat on
-            return
-        url = 'https://api.ecobee.com/1/thermostat'
-        header = {'Content-Type': 'application/json;charset=UTF-8',
-                  'Authorization': 'Bearer ' + self.access_token}
-        params = {'format': 'json'}
         body = ('{"selection":{"selectionType":"thermostats","selectionMatch":'
                 '"' + self.thermostats[index]['identifier'] +
                 '"},"thermostat":{"settings":{"vent":"' + fan_mode +
                 '"}}}')
-        request = requests.post(url, headers=header, params=params, data=body)
-        if request.status_code == requests.codes.ok:
-            return request
-        else:
-            print("Error connecting to Ecobee while attempting to set"
-                  " fan mode.  Refreshing tokens...")
-            self.refresh_tokens()
+        log_msg_action = "set fan mode"
+        return make_request(body, log_msg_action)
 
     def set_hold_temp(self, index, cool_temp, heat_temp,
                       hold_type="nextTransition"):
         ''' Set a hold '''
-        url = 'https://api.ecobee.com/1/thermostat'
-        header = {'Content-Type': 'application/json;charset=UTF-8',
-                  'Authorization': 'Bearer ' + self.access_token}
-        params = {'format': 'json'}
         body = ('{"functions":[{"type":"setHold","params":{"holdType":"'
                 + hold_type + '","coolHoldTemp":"' + str(cool_temp * 10) +
                 '","heatHoldTemp":"' + str(heat_temp * 10) + '"}}],'
                 '"selection":{"selectionType":"thermostats","selectionMatch"'
                 ':"' + self.thermostats[index]['identifier'] + '"}}')
-        request = requests.post(url, headers=header, params=params, data=body)
-        if request.status_code == requests.codes.ok:
-            return request
-        else:
-            logger.info("Error connecting to Ecobee while attempting to set"
-                  " hold temp.  Refreshing tokens and trying again.")
-            if self.refresh_tokens():
-                return self.set_hold_temp(index, cool_temp, heat_temp, hold_type)
-            else:
-                return None
+        log_msg_action = "set hold temp"
+        return make_request(body, log_msg_action)
 
     def set_climate_hold(self, index, climate, hold_type="nextTransition"):
         ''' Set a climate hold - ie away, home, sleep '''
-        url = 'https://api.ecobee.com/1/thermostat'
-        header = {'Content-Type': 'application/json;charset=UTF-8',
-                  'Authorization': 'Bearer ' + self.access_token}
-        params = {'format': 'json'}
         body = ('{"functions":[{"type":"setHold","params":{"holdType":"'
                 + hold_type + '","holdClimateRef":"' + climate + '"}}],'
                 '"selection":{"selectionType":"thermostats","selectionMatch"'
                 ':"' + self.thermostats[index]['identifier'] + '"}}')
-        request = requests.post(url, headers=header, params=params, data=body)
-        if request.status_code == requests.codes.ok:
-            return request
-        else:
-            logger.info("Error connecting to Ecobee while attempting to set"
-                  " climate hold.  Refreshing tokens and trying again.")
-            if self.refresh_tokens():
-                return self.set_climate_hold(index, climate, hold_type):
-            else:
-                return None
+        log_msg_action = "set climate hold"
+        return make_request(body, log_msg_action)
 
     def delete_vacation(self, index, vacation):
         ''' Delete the vacation with name vacation '''
-        url = 'https://api.ecobee.com/1/thermostat'
-        header = {'Content-Type': 'application/json;charset=UTF-8',
-                  'Authorization': 'Bearer ' + self.access_token}
-        params = {'format': 'json'}
         body = ('{"functions":[{"type":"deleteVacation","params":{"name":"'
                 + vacation + '"}}],'
                 '"selection":{"selectionType":"registered","selectionMatch":"'
                 '"}}')
-        request = requests.post(url, headers=header, params=params, data=body)
-        if request.status_code == requests.codes.ok:
-            return request
-        else:
-            logger.info("Error connecting to Ecobee while attempting to delete"
-                  " a vacation.  Refreshing tokens and trying again.")
-            if self.refresh_tokens():
-                return self.delete_vacation(index, vacation)
-            else:
-                return None
+        log_msg_action = "delete a vacation"
+        return make_request(body, log_msg_action)
 
     def resume_program(self, index, resume_all="false"):
         ''' Resume currently scheduled program '''
-        url = 'https://api.ecobee.com/1/thermostat'
-        header = {'Content-Type': 'application/json;charset=UTF-8',
-                  'Authorization': 'Bearer ' + self.access_token}
-        params = {'format': 'json'}
         body = ('{"functions":[{"type":"resumeProgram","params":{"resumeAll"'
                 ':"' + resume_all + '"}}],"selection":{"selectionType"'
                 ':"thermostats","selectionMatch":"'
                 + self.thermostats[index]['identifier'] + '"}}')
-        request = requests.post(url, headers=header, params=params, data=body)
-        if request.status_code == requests.codes.ok:
-            return request
-        else:
-            logger.info("Error connecting to Ecobee while attempting to resume"
-                  " program.  Refreshing tokens and trying again.")
-            if self.refresh_tokens():
-                return self.resume_program(index, resume_all="false")
-            else:
-                return None
+        log_msg_action = "resume program"
+        return make_request(body, log_msg_action)
 
     def send_message(self, index, message="Hello from python-ecobee!"):
         ''' Send a message to the thermostat '''
-        url = 'https://api.ecobee.com/1/thermostat'
-        header = {'Content-Type': 'application/json;charset=UTF-8',
-                  'Authorization': 'Bearer ' + self.access_token}
-        params = {'format': 'json'}
         body = ('{"functions":[{"type":"sendMessage","params":{"text"'
                 ':"' + message[0:500] + '"}}],"selection":{"selectionType"'
                 ':"thermostats","selectionMatch":"'
                 + self.thermostats[index]['identifier'] + '"}}')
-        request = requests.post(url, headers=header, params=params, data=body)
-        if request.status_code == requests.codes.ok:
-            return request
-        else:
-            logger.info("Error connecting to Ecobee while attempting to send"
-                  " message.  Refreshing tokens and trying again.")
-            if self.refresh_tokens():
-                return self.send_message(index, message)
-            else:
-                return None
-
+        log_msg_action = "send message"
+        return make_request(body, log_msg_action)

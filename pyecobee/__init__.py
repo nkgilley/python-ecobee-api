@@ -151,6 +151,22 @@ class Ecobee(object):
         ''' Return remote sensors based on index '''
         return self.thermostats[index]['remoteSensors']
 
+    def write_tokens_to_file(self):
+        ''' Write api tokens to a file '''
+        config = dict()
+        config['API_KEY'] = self.api_key
+        config['ACCESS_TOKEN'] = self.access_token
+        config['REFRESH_TOKEN'] = self.refresh_token
+        config['AUTHORIZATION_CODE'] = self.authorization_code
+        if self.file_based_config:
+            config_from_file(self.config_filename, config)
+        else:
+            self.config = config
+
+    def update(self):
+        ''' Get new thermostat data from ecobee '''
+        self.get_thermostats()
+
     def set_hvac_mode(self, index, hvac_mode):
         ''' possible hvac modes are auto, auxHeatOnly, cool, heat, off '''
         url = 'https://api.ecobee.com/1/thermostat'
@@ -320,18 +336,3 @@ class Ecobee(object):
             else:
                 return None
 
-    def write_tokens_to_file(self):
-        ''' Write api tokens to a file '''
-        config = dict()
-        config['API_KEY'] = self.api_key
-        config['ACCESS_TOKEN'] = self.access_token
-        config['REFRESH_TOKEN'] = self.refresh_token
-        config['AUTHORIZATION_CODE'] = self.authorization_code
-        if self.file_based_config:
-            config_from_file(self.config_filename, config)
-        else:
-            self.config = config
-
-    def update(self):
-        ''' Get new thermostat data from ecobee '''
-        self.get_thermostats()

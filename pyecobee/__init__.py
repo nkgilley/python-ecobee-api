@@ -165,9 +165,12 @@ class Ecobee(object):
         if request.status_code == requests.codes.ok:
             return request
         else:
-            logger.warn("Error connecting to Ecobee while attempting to set"
-                  " HVAC mode.  Refreshing tokens...")
-            self.refresh_tokens()
+            logger.info("Error connecting to Ecobee while attempting to set"
+                  " HVAC mode.  Refreshing tokens and trying again.")
+            if self.refresh_tokens():
+                return self.set_hvac_mode(index, hvac_mode)
+            else:
+                return None
 
     def set_fan_min_on_time(self, index, fan_min_on_time):
         ''' The minimum time, in minutes, to run the fan each hour. Value from 1 to 60 '''
@@ -183,9 +186,12 @@ class Ecobee(object):
         if request.status_code == requests.codes.ok:
             return request
         else:
-            logger.warn("Error connecting to Ecobee while attempting to set"
-                  " fan minimum on time.  Refreshing tokens...")
-            self.refresh_tokens()
+            logger.info("Error connecting to Ecobee while attempting to set"
+                  " fan minimum on time.  Refreshing tokens and trying again.")
+            if self.refresh_tokens():
+                return self.set_fan_min_on_time(index, fan_min_on_time):
+            else:
+                return None
 
     def set_fan_mode(self, index, fan_mode):
         ''' Set fan mode. Values: auto, minontime, on '''
@@ -223,9 +229,12 @@ class Ecobee(object):
         if request.status_code == requests.codes.ok:
             return request
         else:
-            logger.warn("Error connecting to Ecobee while attempting to set"
-                  " hold temp.  Refreshing tokens...")
-            self.refresh_tokens()
+            logger.info("Error connecting to Ecobee while attempting to set"
+                  " hold temp.  Refreshing tokens and trying again.")
+            if self.refresh_tokens():
+                return self.set_hold_temp(index, cool_temp, heat_temp, hold_type)
+            else:
+                return None
 
     def set_climate_hold(self, index, climate, hold_type="nextTransition"):
         ''' Set a climate hold - ie away, home, sleep '''
@@ -241,9 +250,12 @@ class Ecobee(object):
         if request.status_code == requests.codes.ok:
             return request
         else:
-            logger.warn("Error connecting to Ecobee while attempting to set"
-                  " climate hold.  Refreshing tokens...")
-            self.refresh_tokens()
+            logger.info("Error connecting to Ecobee while attempting to set"
+                  " climate hold.  Refreshing tokens and trying again.")
+            if self.refresh_tokens():
+                return self.set_climate_hold(index, climate, hold_type):
+            else:
+                return None
 
     def delete_vacation(self, index, vacation):
         ''' Delete the vacation with name vacation '''
@@ -259,9 +271,12 @@ class Ecobee(object):
         if request.status_code == requests.codes.ok:
             return request
         else:
-            logger.warn("Error connecting to Ecobee while attempting to delete"
-                  " a vacation.  Refreshing tokens...")
-            self.refresh_tokens()
+            logger.info("Error connecting to Ecobee while attempting to delete"
+                  " a vacation.  Refreshing tokens and trying again.")
+            if self.refresh_tokens():
+                return self.delete_vacation(index, vacation)
+            else:
+                return None
 
     def resume_program(self, index, resume_all="false"):
         ''' Resume currently scheduled program '''
@@ -277,9 +292,12 @@ class Ecobee(object):
         if request.status_code == requests.codes.ok:
             return request
         else:
-            logger.warn("Error connecting to Ecobee while attempting to resume"
-                  " program.  Refreshing tokens...")
-            self.refresh_tokens()
+            logger.info("Error connecting to Ecobee while attempting to resume"
+                  " program.  Refreshing tokens and trying again.")
+            if self.refresh_tokens():
+                return self.resume_program(index, resume_all="false")
+            else:
+                return None
 
     def send_message(self, index, message="Hello from python-ecobee!"):
         ''' Send a message to the thermostat '''
@@ -295,9 +313,12 @@ class Ecobee(object):
         if request.status_code == requests.codes.ok:
             return request
         else:
-            logger.warn("Error connecting to Ecobee while attempting to send"
-                  " message.  Refreshing tokens...")
-            self.refresh_tokens()
+            logger.info("Error connecting to Ecobee while attempting to send"
+                  " message.  Refreshing tokens and trying again.")
+            if self.refresh_tokens():
+                return self.send_message(index, message)
+            else:
+                return None
 
     def write_tokens_to_file(self):
         ''' Write api tokens to a file '''

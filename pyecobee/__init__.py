@@ -190,7 +190,7 @@ class Ecobee(object):
                 '"},"thermostat":{"settings":{"hvacMode":"' + hvac_mode +
                 '"}}}')
         log_msg_action = "set HVAC mode"
-        return make_request(body, log_msg_action)
+        return self.make_request(body, log_msg_action)
 
     def set_fan_min_on_time(self, index, fan_min_on_time):
         ''' The minimum time, in minutes, to run the fan each hour. Value from 1 to 60 '''
@@ -199,7 +199,7 @@ class Ecobee(object):
                 '"},"thermostat":{"settings":{"fanMinOnTime":"' + fan_min_on_time +
                 '"}}}')
         log_msg_action = "set fan minimum on time."
-        return make_request(body, log_msg_action)
+        return self.make_request(body, log_msg_action)
 
     def set_fan_mode(self, index, fan_mode):
         ''' Set fan mode. Values: auto, minontime, on '''
@@ -208,7 +208,7 @@ class Ecobee(object):
                 '"},"thermostat":{"settings":{"vent":"' + fan_mode +
                 '"}}}')
         log_msg_action = "set fan mode"
-        return make_request(body, log_msg_action)
+        return self.make_request(body, log_msg_action)
 
     def set_hold_temp(self, index, cool_temp, heat_temp,
                       hold_type="nextTransition"):
@@ -219,7 +219,7 @@ class Ecobee(object):
                 '"selection":{"selectionType":"thermostats","selectionMatch"'
                 ':"' + self.thermostats[index]['identifier'] + '"}}')
         log_msg_action = "set hold temp"
-        return make_request(body, log_msg_action)
+        return self.make_request(body, log_msg_action)
 
     def set_climate_hold(self, index, climate, hold_type="nextTransition"):
         ''' Set a climate hold - ie away, home, sleep '''
@@ -228,7 +228,7 @@ class Ecobee(object):
                 '"selection":{"selectionType":"thermostats","selectionMatch"'
                 ':"' + self.thermostats[index]['identifier'] + '"}}')
         log_msg_action = "set climate hold"
-        return make_request(body, log_msg_action)
+        return self.make_request(body, log_msg_action)
 
     def delete_vacation(self, index, vacation):
         ''' Delete the vacation with name vacation '''
@@ -237,7 +237,7 @@ class Ecobee(object):
                 '"selection":{"selectionType":"registered","selectionMatch":"'
                 '"}}')
         log_msg_action = "delete a vacation"
-        return make_request(body, log_msg_action)
+        return self.make_request(body, log_msg_action)
 
     def resume_program(self, index, resume_all="false"):
         ''' Resume currently scheduled program '''
@@ -246,7 +246,7 @@ class Ecobee(object):
                 ':"thermostats","selectionMatch":"'
                 + self.thermostats[index]['identifier'] + '"}}')
         log_msg_action = "resume program"
-        return make_request(body, log_msg_action)
+        return self.make_request(body, log_msg_action)
 
     def send_message(self, index, message="Hello from python-ecobee!"):
         ''' Send a message to the thermostat '''
@@ -255,4 +255,4 @@ class Ecobee(object):
                 ':"thermostats","selectionMatch":"'
                 + self.thermostats[index]['identifier'] + '"}}')
         log_msg_action = "send message"
-        return make_request(body, log_msg_action)
+        return self.make_request(body, log_msg_action)

@@ -33,7 +33,7 @@ SOFTWARE.
 """
 
 setup(name='python-ecobee-api',
-      version='0.0.8',
+      version='0.0.9',
       description='Python API for talking to Ecobee thermostats',
       url='https://github.com/nkgilley/python-ecobee-api',
       download_url='https://github.com/nkgilley/python-ecobee-api/archive/0.0.8.tar.gz',

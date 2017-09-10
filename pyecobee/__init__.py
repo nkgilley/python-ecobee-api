@@ -1,3 +1,4 @@
+# Gotta move this out of init.
 ''' Python Code for Communication with the Ecobee Thermostat '''
 import requests
 import json

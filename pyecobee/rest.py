@@ -1,3 +1,8 @@
+import json
+import requests
+
+from .error import RequestError, ThrottlingError
+
 default_headers = {'User-Agent': 'pyechobe-agent/{0} ({1}, {2} {3})'.format(version,
                                                                       platform.platform(),
                                                                       platform.python_implementation(),

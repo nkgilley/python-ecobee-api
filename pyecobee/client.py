@@ -1,21 +1,65 @@
 ''' Python Code for Communication with the Ecobee Thermostat '''
-import requests
 import json
 import os
-import logging
+#import logging
 
-logger = logging.getLogger('pyecobee')
+import .rest
+import .config
 
-class Ecobee(object):
+#logger = logging.getLogger('pyecobee')
+
+class Client(object):
     ''' Class for storing Ecobee Thermostats and Sensors '''
 
     def __init__(self, config_filename=None, api_key=None, config=None):
-        self.thermostats = list()
-        self.config = Config(log=logger)
+        self.config = Client()
+        self.rest = Rest()
+        self.auth = sel f.Auth(self)
+
+    class Auth(object):
+        def __init__(self, outer):
+            self.rest = outer.rest
+            self.config = outer.config
+
+        def request_pin(self):
+            ''' Method to request a PIN from ecobee for authorization '''
+
+            params = {'response_type': 'ecobeePin', 'scope': 'smartWrite', 'client_id': self.config.api_key}
+            request = self.rest._get("authorize", params=params)
+
+            self.config.authorization_code = request.json()['code']
+            self.config.pin = request.json()['ecobeePin']
+            self.config.pin_scope = request.json()['scope']
+            self.config.pin_expires_in = request.json()['expires_in']
+            self.config.write()
+
+        def request_tokens(self):
+            ''' Method to request API tokens from ecobee '''
+
+            params = {'grant_type': 'ecobeePin', 'code': self.config.authorization_code, 'client_id': self.config.api_key}
+            request = rest._get("token", params=params)
+
+            self.config.token_access = request.json()['access_token']
+            self.config.token_expires = request.json()['expires_in']
+            self.config.token_refresh = request.json()['refresh_token']
+            self.config.token_scope = request.json()['scope']
+            self.config.write()
+
+
+        def refresh_tokens(self):
+            ''' Method to refresh API tokens from ecobee '''
+
+            params = {'grant_type': 'refresh_token', 'refresh_token': self.refresh_token, 'client_id': self.api_key}
+            request = self.rest._post("token", params=params)
+
+            self.config.token_access = request.json()['access_token']
+            self.config.token_expires = request.json()['expires_in']
+            self.config.token_refresh = request.json()['refresh_token']
+            self.config.token_scope = request.json()['scope']
+            self.config.write()
 
     def get_thermostats(self):
         ''' Set self.thermostats to a json list of thermostats from ecobee '''
-        url = 'https://api.ecobee.com/1/thermostat'
         header = {'Content-Type': 'application/json;charset=UTF-8',
                   'Authorization': 'Bearer ' + self.access_token}
         params = {'json': ('{"selection":{"selectionType":"registered",'

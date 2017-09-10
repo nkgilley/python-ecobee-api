@@ -1,11 +1,9 @@
 from .rest import Rest
 
 class Auth(object):
-    def __init__(self, api_key, config):
-        self.authenticated = False
-        self.pin = None
-        self.rest = Rest(api_key)
-        self.config = config
+    def __init__(self, outer):
+        self.rest = outer.rest
+        self.config = outer.config
 
     def request_pin(self):
         ''' Method to request a PIN from ecobee for authorization '''
@@ -17,7 +15,6 @@ class Auth(object):
         self.config.pin = request.json()['ecobeePin']
         self.config.pin_scope = request.json()['scope']
         self.config.pin_expires_in = request.json()['expires_in']
-
         self.config.write()
 
     def request_tokens(self):

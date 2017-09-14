@@ -10,3 +10,7 @@ import json
 import os
 
 logger = logging.getLogger('pyecobee')
+
+class pyecobee(object):
+    def __init__():
+        

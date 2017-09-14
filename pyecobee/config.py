@@ -1,8 +1,6 @@
 class Config(object):
-    def __init__(self, filename='pyecobee.conf', config=None, log=None):
-        self.logger = logger
+    def __init__(self, filename='pyecobee.conf'):
         self.filename = filename
-        self.config = config
 
         # If we do not have any passed configs, read from file if we can.
         if self.config is None:

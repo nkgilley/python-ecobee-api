@@ -1,6 +1,3 @@
-from .rest import Rest
-from .data import Data
-
 class Auth(object):
     def __init__(self, api_key, config):
         self.authenticated = False

@@ -1,5 +1,3 @@
-from .data import Data
-
 class Rest(object):
     def __init__(self, key, proxies=None, base_url='https://api.ecobee.com', api_version='1'):
         self.key = key

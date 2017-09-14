@@ -1,12 +1,4 @@
-''' Python Code for Communication with the Ecobee Thermostat '''
-import requests
-import json
-import os
-import logging
-
-logger = logging.getLogger('pyecobee')
-
-class Ecobee(object):
+class Client(object):
     ''' Class for storing Ecobee Thermostats and Sensors '''
 
     def __init__(self, config_filename=None, api_key=None, config=None):

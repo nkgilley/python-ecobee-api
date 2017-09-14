@@ -7,8 +7,8 @@ class Config(object):
             self.config = self.read()
             if not self.config:
                 self.check_params()
-        else
-            if self.filename not None:
+        else:
+            if self.filename is not None:
                 self.write()
 
         self.check_params()
@@ -17,7 +17,7 @@ class Config(object):
 
     def check_params(self):
         if 'API_KEY' in self.config:
-            self.api_key = self.config.['API_KEY']
+            self.api_key = self.config['API_KEY']
         else:
             self.api_key = ''
 
@@ -49,7 +49,7 @@ class Config(object):
                 with open(self.filename, 'r') as fdesc:
                     return json.loads(fdesc.read())
             except IOError as error:
-                if self.log not None:
+                if self.log is not None:
                     self.log.exception(error)
                 return False
         else:
@@ -60,7 +60,7 @@ class Config(object):
             with open(self.filename, 'w') as fdesc:
                 fdesc.write(json.dumps(self.config))
         except IOError as error:
-            if self.log not None:
+            if self.log is not None:
                 self.log.exception(error)
             return False
         return True

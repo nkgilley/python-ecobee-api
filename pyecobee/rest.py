@@ -8,7 +8,7 @@ class Rest(object):
         self.base_url = base_url.rstrip('/')
 
     def _compose_url(self, path):
-        if (path == "authorize") || (path == "token") :
+        if (path == "authorize") or (path == "token") :
             return '{0}/{1}'.format(self.base_url, path)
         else:
             return '{0}/{1}/{2}'.format(self.base_url, self.api_version, path)

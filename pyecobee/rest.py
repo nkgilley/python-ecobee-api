@@ -1,15 +1,4 @@
-import json
-import requests
-
-from .error import RequestError, ThrottlingError
-
-default_headers = {'User-Agent': 'pyechobe-agent/{0} ({1}, {2} {3})'.format(version,
-                                                                      platform.platform(),
-                                                                      platform.python_implementation(),
-                                                                      platform.python_version()),
-                  'Content-Type': 'application/json;charset=UTF-8'}
-
-default_params = {}
+from .data import Data
 
 class Rest(object):
     def __init__(self, key, proxies=None, base_url='https://api.ecobee.com', api_version='1'):

@@ -1,8 +1,11 @@
+import requests
+from .rest import Rest
+
 class Auth(object):
     def __init__(self, api_key, config):
         self.authenticated = False
         self.pin = None
-        self.rest = Rest(api_key)
+        self.rest = Rest()
         self.config = config
 
     def request_pin(self):

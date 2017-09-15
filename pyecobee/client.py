@@ -1,17 +1,19 @@
-class Client(object):
-    ''' Class for storing Ecobee Thermostats and Sensors '''
+from .auth import Auth
+from .config import Config
+from .data import Data
 
-    def __init__(self, config_filename=None, api_key=None, config=None):
-        self.thermostats = list()
-        self.config = Config(log=logger)
+class Client(object):
+    def __init__(self, config_filename=None, api_key, data=None):
+        self.data = Data()
+        self.config = Config()
+        self.data = self.config.read()
+        self.auth = Auth(api_key, self.data)
 
     class Thermostat(object):
-
         def get_thermostats(self):
             ''' Set self.thermostats to a json list of thermostats from ecobee '''
             url = 'https://api.ecobee.com/1/thermostat'
-            header = {'Content-Type': 'application/json;charset=UTF-8',
-                      'Authorization': 'Bearer ' + self.access_token}
+            header = {'Authorization': 'Bearer ' + self.access_token}
             params = {'json': ('{"selection":{"selectionType":"registered",'
                                 '"includeRuntime":"true",'
                                 '"includeSensors":"true",'

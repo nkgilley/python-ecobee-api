@@ -1,6 +1,7 @@
+from .error import ThrottlingError,RequestError
+
 class Rest(object):
-    def __init__(self, key, proxies=None, base_url='https://api.ecobee.com', api_version='1'):
-        self.key = key
+    def __init__(self, data, proxies=None, base_url='https://api.ecobee.com', api_version='1'):
         self.proxies = proxies
         self.api_version = api_version
         self.base_url = base_url.rstrip('/')

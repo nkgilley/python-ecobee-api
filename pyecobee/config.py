@@ -1,49 +1,18 @@
+import os,json
+import md5
+
 class Config(object):
-    def __init__(self, filename='pyecobee.conf'):
+    def __init__(self, data, filename='pyecobee.conf'):
+        self.data = data
         self.filename = filename
 
-        # If we do not have any passed configs, read from file if we can.
-        if self.config is None:
-            self.config = self.read()
-            if not self.config:
-                self.check_params()
+        if os.path.exists('pyecobee.conf'):
+            print "reading config"
+            self.data = self.read()
         else:
-            if self.filename is not None:
-                self.write()
-
-        self.check_params()
-
-        return(self.config)
-
-    def check_params(self):
-        if 'API_KEY' in self.config:
-            self.api_key = self.config['API_KEY']
-        else:
-            self.api_key = ''
-
-        if 'ACCESS_TOKEN' in self.config:
-            self.access_token = self.config['ACCESS_TOKEN']
-        else:
-            self.access_token = ''
-
-        if 'AUTHORIZATION_CODE' in self.config:
-            self.authorization_code = self.config['AUTHORIZATION_CODE']
-        else:
-            self.authorization_code = ''
-
-        if 'REFRESH_TOKEN' in config:
-            self.refresh_token = self.config['REFRESH_TOKEN']
-        else:
-            self.refresh_token = ''
             return
 
-        if 'PIN' in config:
-            self.pin = self.config['PIN']
-        else:
-            self.pin = ''
-            return
-
-    def read(self):
+    def read(self, filename='pyecobee.conf'):
         if os.path.isfile(self.filename):
             try:
                 with open(self.filename, 'r') as fdesc:
@@ -55,10 +24,10 @@ class Config(object):
         else:
             return {}
 
-    def write(self):
+    def write(self, data, filename='pyecobee.conf'):
         try:
             with open(self.filename, 'w') as fdesc:
-                fdesc.write(json.dumps(self.config))
+                fdesc.write(json.dumps(data.store))
         except IOError as error:
             if self.log is not None:
                 self.log.exception(error)

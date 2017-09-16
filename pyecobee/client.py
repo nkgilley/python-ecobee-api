@@ -2,12 +2,26 @@ from .auth import Auth
 from .config import Config
 from .data import Data
 
+import json
+
 class Client(object):
-    def __init__(self, config_filename=None, api_key, data=None):
+    def __init__(self, api_key, config_filename=None, data=None):
+        print "importing Data"
         self.data = Data()
-        self.config = Config()
-        self.data = self.config.read()
-        self.auth = Auth(api_key, self.data)
+        print "importing Config"
+        self.config = Config(self.data)
+
+        print "updating api_key"
+        self.data.store['auth']['api_key'] = api_key
+        print "writing config"
+        self.config.write(self.data)
+
+        #self.data = self.config.read(config_filename, self.data.data )
+        print "loading Auth"
+        self.auth = Auth(self.data)
+        print "reducing functions"
+        self.functions = self.data.store['rest']['thermostat']['functions']
+        print json.dumps(self.functions['unlinkVoiceEngine'])
 
     class Thermostat(object):
         def get_thermostats(self):

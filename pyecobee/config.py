@@ -18,16 +18,14 @@ class Config(object):
                 with open(self.filename, 'r') as fdesc:
                     return json.loads(fdesc.read())
             except IOError as error:
-                if self.log is not None:
-                    self.log.exception(error)
-                return False
+                print "read io error"
         else:
             return {}
 
     def write(self, data, filename='pyecobee.conf'):
         try:
             with open(self.filename, 'w') as fdesc:
-                fdesc.write(json.dumps(data.store))
+                fdesc.write(json.dumps(data.store, indent=4, sort_keys=True))
         except IOError as error:
             if self.log is not None:
                 self.log.exception(error)

@@ -6,22 +6,14 @@ import json
 
 class Client(object):
     def __init__(self, api_key, config_filename=None, data=None):
-        print "importing Data"
-        self.data = Data()
-        print "importing Config"
+        self.data = Data(api_key)
         self.config = Config(self.data)
-
-        print "updating api_key"
         self.data.store['auth']['api_key'] = api_key
-        print "writing config"
         self.config.write(self.data)
-
-        #self.data = self.config.read(config_filename, self.data.data )
-        print "loading Auth"
+        self.data.store = self.config.read()
         self.auth = Auth(self.data)
-        print "reducing functions"
+        self.config.write(self.data)
         self.functions = self.data.store['rest']['thermostat']['functions']
-        print json.dumps(self.functions['unlinkVoiceEngine'])
 
     class Thermostat(object):
         def get_thermostats(self):

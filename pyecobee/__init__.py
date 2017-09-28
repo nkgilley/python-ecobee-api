@@ -214,8 +214,8 @@ class Ecobee(object):
                       hold_type="nextTransition"):
         ''' Set a hold '''
         body = ('{"functions":[{"type":"setHold","params":{"holdType":"'
-                + hold_type + '","coolHoldTemp":"' + str(cool_temp * 10) +
-                '","heatHoldTemp":"' + str(heat_temp * 10) + '"}}],'
+                + hold_type + '","coolHoldTemp":"' + str(int(cool_temp * 10)) +
+                '","heatHoldTemp":"' + str(int(heat_temp * 10)) + '"}}],'
                 '"selection":{"selectionType":"thermostats","selectionMatch"'
                 ':"' + self.thermostats[index]['identifier'] + '"}}')
         log_msg_action = "set hold temp"

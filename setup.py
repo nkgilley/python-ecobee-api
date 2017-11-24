@@ -33,10 +33,10 @@ SOFTWARE.
 """
 
 setup(name='python-ecobee-api',
-      version='0.0.10',
+      version='0.0.11',
       description='Python API for talking to Ecobee thermostats',
       url='https://github.com/nkgilley/python-ecobee-api',
-      download_url='https://github.com/nkgilley/python-ecobee-api/archive/0.0.10.tar.gz',
+      download_url='https://github.com/nkgilley/python-ecobee-api/archive/0.0.11.tar.gz',
       author='Nolan Gilley',
       author_email='nkgilley@gmail.com',
       license='MIT',

@@ -256,3 +256,12 @@ class Ecobee(object):
                 + self.thermostats[index]['identifier'] + '"}}')
         log_msg_action = "send message"
         return self.make_request(body, log_msg_action)
+
+    def set_humidity(self, index, humidity):
+        ''' Set humidity level'''
+        body = ('{"selection":{"selectionType":"thermostats","selectionMatch":'
+                '"' + self.thermostats[index]['identifier'] +
+                '"},"thermostat":{"settings":{"humidity":"' + str(int(humidity)) +
+                '"}}}')
+        log_msg_action = "set humidity level"
+        return self.make_request(body, log_msg_action)

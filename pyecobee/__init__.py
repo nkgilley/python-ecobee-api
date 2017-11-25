@@ -128,6 +128,7 @@ class Ecobee(object):
                             '"includeProgram":"true",'
                             '"includeEquipmentStatus":"true",'
                             '"includeEvents":"true",'
+                            '"includeWeather":"true",'
                             '"includeSettings":"true"}}')}
         request = requests.get(url, headers=header, params=params)
         if request.status_code == requests.codes.ok:

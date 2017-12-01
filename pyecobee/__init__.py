@@ -4,6 +4,8 @@ import json
 import os
 import logging
 
+from requests.exceptions import RequestException;
+
 logger = logging.getLogger('pyecobee')
 
 
@@ -130,7 +132,11 @@ class Ecobee(object):
                             '"includeEvents":"true",'
                             '"includeWeather":"true",'
                             '"includeSettings":"true"}}')}
-        request = requests.get(url, headers=header, params=params)
+        try:
+            request = requests.get(url, headers=header, params=params)
+        except RequestException:
+            logger.warn("Error connecting to Ecobee.  Possible connectivity outage.")
+            return None
         if request.status_code == requests.codes.ok:
             self.authenticated = True
             self.thermostats = request.json()['thermostatList']

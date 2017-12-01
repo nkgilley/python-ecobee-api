@@ -79,7 +79,12 @@ class Ecobee(object):
         url = 'https://api.ecobee.com/authorize'
         params = {'response_type': 'ecobeePin',
                   'client_id': self.api_key, 'scope': 'smartWrite'}
-        request = requests.get(url, params=params)
+        try:
+            request = requests.get(url, params=params)
+        except RequestException:
+            logger.warn("Error connecting to Ecobee.  Possible connectivity outage."
+                        "Could not request pin.")
+            return
         self.authorization_code = request.json()['code']
         self.pin = request.json()['ecobeePin']
         logger.error('Please authorize your ecobee developer app with PIN code '
@@ -93,7 +98,12 @@ class Ecobee(object):
         url = 'https://api.ecobee.com/token'
         params = {'grant_type': 'ecobeePin', 'code': self.authorization_code,
                   'client_id': self.api_key}
-        request = requests.post(url, params=params)
+        try:
+            request = requests.post(url, params=params)
+        except RequestException:
+            logger.warn("Error connecting to Ecobee.  Possible connectivity outage."
+                        "Could not request token.")
+            return
         if request.status_code == requests.codes.ok:
             self.access_token = request.json()['access_token']
             self.refresh_token = request.json()['refresh_token']
@@ -179,7 +189,11 @@ class Ecobee(object):
         header = {'Content-Type': 'application/json;charset=UTF-8',
                   'Authorization': 'Bearer ' + self.access_token}
         params = {'format': 'json'}
-        request = requests.post(url, headers=header, params=params, data=body)
+        try:
+            request = requests.post(url, headers=header, params=params, data=body)
+        except RequestException:
+            logger.warn("Error connecting to Ecobee.  Possible connectivity outage.")
+            return None
         if request.status_code == requests.codes.ok:
             return request
         else:

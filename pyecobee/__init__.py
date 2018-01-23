@@ -200,7 +200,7 @@ class Ecobee(object):
             logger.info("Error connecting to Ecobee while attempting to %s.  "
                         "Refreshing tokens and trying again.", log_msg_action)
             if self.refresh_tokens():
-                return self.make_request(body)
+                return self.make_request(body, log_msg_action)
             else:
                 return None
 

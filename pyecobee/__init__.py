@@ -222,12 +222,17 @@ class Ecobee(object):
         log_msg_action = "set fan minimum on time."
         return self.make_request(body, log_msg_action)
 
-    def set_fan_mode(self, index, fan_mode):
+    def set_fan_mode(self, index, fan_mode, cool_temp, heat_temp, hold_type="nextTransition"):
         ''' Set fan mode. Values: auto, minontime, on '''
-        body = ('{"selection":{"selectionType":"thermostats","selectionMatch":'
-                '"' + self.thermostats[index]['identifier'] +
-                '"},"thermostat":{"settings":{"vent":"' + fan_mode +
-                '"}}}')
+        body = {"selection": {
+                    "selectionType": "thermostats",
+                    "selectionMatch": self.thermostats[index]['identifier']},
+                "functions": [{"type": "setHold", "params": {
+                    "holyType": hold_type,
+                    "coolHoldTemp": cool_temp * 10,
+                    "heatHoldTemp": heat_temp * 10,
+                    "fan": fan_mode
+                }}]}
         log_msg_action = "set fan mode"
         return self.make_request(body, log_msg_action)
 

@@ -235,8 +235,8 @@ class Ecobee(object):
                     "selectionMatch": self.thermostats[index]['identifier']},
                 "functions": [{"type": "setHold", "params": {
                     "holyType": hold_type,
-                    "coolHoldTemp": cool_temp * 10,
-                    "heatHoldTemp": heat_temp * 10,
+                    "coolHoldTemp": int(cool_temp * 10),
+                    "heatHoldTemp": int(heat_temp * 10),
                     "fan": fan_mode
                 }}]}
         log_msg_action = "set fan mode"
@@ -250,8 +250,8 @@ class Ecobee(object):
                     "selectionMatch": self.thermostats[index]['identifier']},
                 "functions": [{"type": "setHold", "params": {
                     "holyType": hold_type,
-                    "coolHoldTemp": cool_temp * 10,
-                    "heatHoldTemp": heat_temp * 10
+                    "coolHoldTemp": int(cool_temp * 10),
+                    "heatHoldTemp": int(heat_temp * 10)
                 }}]}
         log_msg_action = "set hold temp"
         return self.make_request(body, log_msg_action)

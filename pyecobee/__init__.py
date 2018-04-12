@@ -190,7 +190,7 @@ class Ecobee(object):
                   'Authorization': 'Bearer ' + self.access_token}
         params = {'format': 'json'}
         try:
-            request = requests.post(url, headers=header, params=params, data=json.dumps(body))
+            request = requests.post(url, headers=header, params=params, json=body)
         except RequestException:
             logger.warn("Error connecting to Ecobee.  Possible connectivity outage.")
             return None
@@ -200,7 +200,7 @@ class Ecobee(object):
             logger.info("Error connecting to Ecobee while attempting to %s.  "
                         "Refreshing tokens and trying again.", log_msg_action)
             if self.refresh_tokens():
-                return self.make_request(json.dumps(body), log_msg_action)
+                return self.make_request(body, log_msg_action)
             else:
                 return None
 

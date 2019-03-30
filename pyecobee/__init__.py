@@ -316,3 +316,52 @@ class Ecobee(object):
 
         log_msg_action = "set humidity level"
         return self.make_request(body, log_msg_action)
+    
+    def set_mic_mode(self, index, mic_enabled):
+        '''Enable/disable Alexa mic (only for Ecobee 4)
+        Values: True, False
+        '''
+        
+        body = {
+            'selection': {
+                'selectionType': 'thermostats',
+                'selectionMatch': self.thermostats[index]['identifier']},
+            'thermostat': {
+                'audio': {
+                    'microphoneEnabled': mic_enabled}}}
+
+        log_msg_action = 'set mic mode'
+        return self.make_request(body, log_msg_action)
+
+    def set_occupancy_modes(self, index, auto_away=None, follow_me=None):
+        '''Enable/disable Smart Home/Away and Follow Me modes
+        Values: True, False
+        '''
+        
+        body = {
+            'selection': {
+                'selectionType': 'thermostats',
+                'selectionMatch': self.thermostats[index]['identifier']},
+            'thermostat': {
+                'settings': {
+                    'autoAway': auto_away,
+                    'followMeComfort': follow_me}}}
+
+        log_msg_action = 'set occupancy modes'
+        return self.make_request(body, log_msg_action)
+
+    def set_dst_mode(self, index, dst):
+        '''Enable/disable daylight savings
+        Values: True, False
+        '''
+        
+        body = {
+            'selection': {
+                'selectionType': 'thermostats',
+                'selectionMatch': self.thermostats[index]['identifier']},
+            'thermostat': {
+                'location': {
+                    'isDaylightSaving': dst}}}
+
+        log_msg_action = 'set dst mode'
+        return self.make_request(body, log_msg_action)

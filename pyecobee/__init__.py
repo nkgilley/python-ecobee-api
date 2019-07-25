@@ -184,7 +184,7 @@ class Ecobee(object):
         ''' Get new thermostat data from ecobee '''
         self.get_thermostats()
 
-    def make_request(self, body, log_msg_action):
+    def make_request(self, body, log_msg_action, *, retry_count=0):
         url = 'https://api.ecobee.com/1/thermostat'
         header = {'Content-Type': 'application/json;charset=UTF-8',
                   'Authorization': 'Bearer ' + self.access_token}
@@ -196,13 +196,16 @@ class Ecobee(object):
             return None
         if request.status_code == requests.codes.ok:
             return request
-        else:
-            logger.info("Error connecting to Ecobee while attempting to %s.  "
-                        "Refreshing tokens and trying again.", log_msg_action)
+        elif (request.status_code == 401 and retry_count == 0 and
+              request.json()['error'] == 'authorization_expired'):
             if self.refresh_tokens():
-                return self.make_request(body, log_msg_action)
-            else:
-                return None
+                return self.make_request(body, log_msg_action,
+                                         retry_count=retry_count + 1)
+        else:
+            logger.info(
+                "Error fetching data from Ecobee while attempting to %s: %s"
+                log_msg_action, request.json())
+            return None
 
     def set_hvac_mode(self, index, hvac_mode):
         ''' possible hvac modes are auto, auxHeatOnly, cool, heat, off '''
@@ -316,12 +319,12 @@ class Ecobee(object):
 
         log_msg_action = "set humidity level"
         return self.make_request(body, log_msg_action)
-    
+
     def set_mic_mode(self, index, mic_enabled):
         '''Enable/disable Alexa mic (only for Ecobee 4)
         Values: True, False
         '''
-        
+
         body = {
             'selection': {
                 'selectionType': 'thermostats',
@@ -337,7 +340,7 @@ class Ecobee(object):
         '''Enable/disable Smart Home/Away and Follow Me modes
         Values: True, False
         '''
-        
+
         body = {
             'selection': {
                 'selectionType': 'thermostats',
@@ -354,7 +357,7 @@ class Ecobee(object):
         '''Enable/disable daylight savings
         Values: True, False
         '''
-        
+
         body = {
             'selection': {
                 'selectionType': 'thermostats',

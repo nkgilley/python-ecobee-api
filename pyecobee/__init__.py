@@ -203,7 +203,7 @@ class Ecobee(object):
                                          retry_count=retry_count + 1)
         else:
             logger.info(
-                "Error fetching data from Ecobee while attempting to %s: %s"
+                "Error fetching data from Ecobee while attempting to %s: %s",
                 log_msg_action, request.json())
             return None
 

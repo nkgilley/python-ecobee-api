@@ -87,7 +87,7 @@ class Ecobee(object):
             return
         self.authorization_code = request.json()['code']
         self.pin = request.json()['ecobeePin']
-        logger.error('Please authorize your ecobee developer app with PIN code '
+        logger.info('Please authorize your ecobee developer app with PIN code '
               + self.pin + '\nGoto https://www.ecobee.com/consumerportal'
               '/index.html, click\nMy Apps, Add application, Enter Pin'
               ' and click Authorize.\nAfter authorizing, call request_'

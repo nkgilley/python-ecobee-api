@@ -6,6 +6,11 @@ import logging
 
 from requests.exceptions import RequestException;
 
+from .const import (ECOBEE_ACCESS_TOKEN,
+                    ECOBEE_API_KEY,
+                    ECOBEE_AUTHORIZATION_CODE,
+                    ECOBEE_REFRESH_TOKEN)
+
 logger = logging.getLogger('pyecobee')
 
 
@@ -46,27 +51,27 @@ class Ecobee(object):
                 if api_key is None:
                     logger.error("Error. No API Key was supplied.")
                     return
-                jsonconfig = {"API_KEY": api_key}
+                jsonconfig = {ECOBEE_API_KEY: api_key}
                 config_filename = 'ecobee.conf'
                 config_from_file(config_filename, jsonconfig)
             config = config_from_file(config_filename)
         else:
             self.file_based_config = False
-        self.api_key = config['API_KEY']
+        self.api_key = config[ECOBEE_API_KEY]
         self.config_filename = config_filename
 
-        if 'ACCESS_TOKEN' in config:
-            self.access_token = config['ACCESS_TOKEN']
+        if ECOBEE_ACCESS_TOKEN in config:
+            self.access_token = config[ECOBEE_ACCESS_TOKEN]
         else:
             self.access_token = ''
 
-        if 'AUTHORIZATION_CODE' in config:
-            self.authorization_code = config['AUTHORIZATION_CODE']
+        if ECOBEE_AUTHORIZATION_CODE in config:
+            self.authorization_code = config[ECOBEE_AUTHORIZATION_CODE]
         else:
             self.authorization_code = ''
 
-        if 'REFRESH_TOKEN' in config:
-            self.refresh_token = config['REFRESH_TOKEN']
+        if ECOBEE_REFRESH_TOKEN in config:
+            self.refresh_token = config[ECOBEE_REFRESH_TOKEN]
         else:
             self.refresh_token = ''
             self.request_pin()
@@ -171,10 +176,10 @@ class Ecobee(object):
     def write_tokens_to_file(self):
         ''' Write api tokens to a file '''
         config = dict()
-        config['API_KEY'] = self.api_key
-        config['ACCESS_TOKEN'] = self.access_token
-        config['REFRESH_TOKEN'] = self.refresh_token
-        config['AUTHORIZATION_CODE'] = self.authorization_code
+        config[ECOBEE_API_KEY] = self.api_key
+        config[ECOBEE_ACCESS_TOKEN] = self.access_token
+        config[ECOBEE_REFRESH_TOKEN] = self.refresh_token
+        config[ECOBEE_AUTHORIZATION_CODE] = self.authorization_code
         if self.file_based_config:
             config_from_file(self.config_filename, config)
         else:

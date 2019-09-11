@@ -9,6 +9,7 @@ from requests.exceptions import RequestException;
 from .const import (ECOBEE_ACCESS_TOKEN,
                     ECOBEE_API_KEY,
                     ECOBEE_AUTHORIZATION_CODE,
+                    ECOBEE_CONFIG_FILENAME,
                     ECOBEE_REFRESH_TOKEN)
 
 logger = logging.getLogger('pyecobee')
@@ -44,6 +45,10 @@ class Ecobee(object):
         self.thermostats = list()
         self.pin = None
         self.authenticated = False
+        self.api_key = None
+        self.access_token = None
+        self.authorization_code = None
+        self.refresh_token = None
 
         if config is None:
             self.file_based_config = True
@@ -52,7 +57,7 @@ class Ecobee(object):
                     logger.error("Error. No API Key was supplied.")
                     return
                 jsonconfig = {ECOBEE_API_KEY: api_key}
-                config_filename = 'ecobee.conf'
+                config_filename = ECOBEE_CONFIG_FILENAME
                 config_from_file(config_filename, jsonconfig)
             config = config_from_file(config_filename)
         else:
@@ -62,22 +67,12 @@ class Ecobee(object):
 
         if ECOBEE_ACCESS_TOKEN in config:
             self.access_token = config[ECOBEE_ACCESS_TOKEN]
-        else:
-            self.access_token = ''
 
         if ECOBEE_AUTHORIZATION_CODE in config:
             self.authorization_code = config[ECOBEE_AUTHORIZATION_CODE]
-        else:
-            self.authorization_code = ''
 
         if ECOBEE_REFRESH_TOKEN in config:
             self.refresh_token = config[ECOBEE_REFRESH_TOKEN]
-        else:
-            self.refresh_token = ''
-            self.request_pin()
-            return
-
-        self.update()
 
     def request_pin(self):
         ''' Method to request a PIN from ecobee for authorization '''

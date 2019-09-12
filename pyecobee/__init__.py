@@ -99,7 +99,7 @@ class Ecobee(object):
                         ' Status code: ' + str(request.status_code))
             return False
 
-    def request_tokens(self):
+    def request_tokens(self) -> bool:
         ''' Method to request API tokens from ecobee '''
         url = 'https://api.ecobee.com/token'
         params = {'grant_type': 'ecobeePin', 'code': self.authorization_code,
@@ -109,16 +109,17 @@ class Ecobee(object):
         except RequestException:
             logger.warn("Error connecting to Ecobee.  Possible connectivity outage."
                         "Could not request token.")
-            return
+            return False
         if request.status_code == requests.codes.ok:
             self.access_token = request.json()['access_token']
             self.refresh_token = request.json()['refresh_token']
             self.write_tokens_to_file()
             self.pin = None
+            return True
         else:
             logger.warn('Error while requesting tokens from ecobee.com.'
                   ' Status code: ' + str(request.status_code))
-            return
+            return False
 
     def refresh_tokens(self):
         ''' Method to refresh API tokens from ecobee '''

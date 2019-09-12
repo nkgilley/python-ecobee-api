@@ -166,8 +166,10 @@ class Ecobee(object):
             self.authenticated = True
             self.thermostats = request.json()['thermostatList']
             return self.thermostats
-        else:
+        elif request.status_code == 400:
             self.authenticated = False
+            raise ExpiredTokenError("Tokens have expired. Request new tokens from ecobee.")
+        else:
             logger.info("Error connecting to Ecobee while attempting to get "
                   "thermostat data.  ")
             return None

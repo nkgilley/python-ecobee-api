@@ -43,7 +43,7 @@ class Ecobee(object):
     ''' Class for storing Ecobee Thermostats and Sensors '''
 
     def __init__(self, config_filename=None, api_key=None, config=None):
-        self.thermostats = list()
+        self.thermostats = None
         self.pin = None
         self.authenticated = False
         self.api_key = None

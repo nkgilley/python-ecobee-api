@@ -11,6 +11,7 @@ from .const import (ECOBEE_ACCESS_TOKEN,
                     ECOBEE_AUTHORIZATION_CODE,
                     ECOBEE_CONFIG_FILENAME,
                     ECOBEE_REFRESH_TOKEN)
+from .errors import ExpiredTokenError
 
 logger = logging.getLogger('pyecobee')
 
@@ -195,7 +196,7 @@ class Ecobee(object):
         ''' Get new thermostat data from ecobee '''
         self.get_thermostats()
 
-    def make_request(self, body, log_msg_action, *, retry_count=0):
+    def make_request(self, body, log_msg_action):
         url = 'https://api.ecobee.com/1/thermostat'
         header = {'Content-Type': 'application/json;charset=UTF-8',
                   'Authorization': 'Bearer ' + self.access_token}
@@ -207,11 +208,8 @@ class Ecobee(object):
             return None
         if request.status_code == requests.codes.ok:
             return request
-        elif (request.status_code == 401 and retry_count == 0 and
-              request.json()['error'] == 'authorization_expired'):
-            if self.refresh_tokens():
-                return self.make_request(body, log_msg_action,
-                                         retry_count=retry_count + 1)
+        elif request.status_code == 400:
+            raise ExpiredTokenError("Tokens have expired. Request new tokens from ecobee.")
         else:
             logger.info(
                 "Error fetching data from Ecobee while attempting to %s: %s",

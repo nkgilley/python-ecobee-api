@@ -74,7 +74,7 @@ class Ecobee(object):
         if ECOBEE_REFRESH_TOKEN in config:
             self.refresh_token = config[ECOBEE_REFRESH_TOKEN]
 
-    def request_pin(self):
+    def request_pin(self) -> bool:
         ''' Method to request a PIN from ecobee for authorization '''
         url = 'https://api.ecobee.com/authorize'
         params = {'response_type': 'ecobeePin',
@@ -84,14 +84,20 @@ class Ecobee(object):
         except RequestException:
             logger.warn("Error connecting to Ecobee.  Possible connectivity outage."
                         "Could not request pin.")
-            return
-        self.authorization_code = request.json()['code']
-        self.pin = request.json()['ecobeePin']
-        logger.info('Please authorize your ecobee developer app with PIN code '
-              + self.pin + '\nGoto https://www.ecobee.com/consumerportal'
-              '/index.html, click\nMy Apps, Add application, Enter Pin'
-              ' and click Authorize.\nAfter authorizing, call request_'
-              'tokens() method.')
+            return False
+        if request.status_code == requests.codes.ok:
+            self.authorization_code = request.json()['code']
+            self.pin = request.json()['ecobeePin']
+            logger.info('Please authorize your ecobee developer app with PIN code '
+                  + self.pin + '\nGoto https://www.ecobee.com/consumerportal'
+                  '/index.html, click\nMy Apps, Add application, Enter Pin'
+                  ' and click Authorize.\nAfter authorizing, call request_'
+                  'tokens() method.')
+            return True
+        else:
+            logger.warn('Error while requesting pin from ecobee.com.'
+                        ' Status code: ' + str(request.status_code))
+            return False
 
     def request_tokens(self):
         ''' Method to request API tokens from ecobee '''

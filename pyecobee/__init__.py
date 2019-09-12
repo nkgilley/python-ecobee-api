@@ -121,7 +121,7 @@ class Ecobee(object):
                   ' Status code: ' + str(request.status_code))
             return False
 
-    def refresh_tokens(self):
+    def refresh_tokens(self) -> bool:
         ''' Method to refresh API tokens from ecobee '''
         url = 'https://api.ecobee.com/token'
         params = {'grant_type': 'refresh_token',
@@ -132,7 +132,7 @@ class Ecobee(object):
         except RequestException:
             logger.warn("Error connecting to Ecobee.  Possible connectivity outage."
                         "Could not refresh token.")
-            return
+            return False
         if request.status_code == requests.codes.ok:
             self.access_token = request.json()['access_token']
             self.refresh_token = request.json()['refresh_token']
@@ -141,7 +141,7 @@ class Ecobee(object):
         else:
             logger.warn('Error while refreshing tokens from ecobee.com.'
                   ' Status code: ' + str(request.status_code))
-            return
+            return False
 
     def get_thermostats(self):
         ''' Set self.thermostats to a json list of thermostats from ecobee '''

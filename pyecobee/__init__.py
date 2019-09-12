@@ -168,11 +168,8 @@ class Ecobee(object):
         else:
             self.authenticated = False
             logger.info("Error connecting to Ecobee while attempting to get "
-                  "thermostat data.  Refreshing tokens and trying again.")
-            if self.refresh_tokens():
-                return self.get_thermostats()
-            else:
-                return None
+                  "thermostat data.  ")
+            return None
 
     def get_thermostat(self, index):
         ''' Return a single thermostat based on index '''

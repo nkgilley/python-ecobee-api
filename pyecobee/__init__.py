@@ -6,6 +6,13 @@ import logging
 
 from requests.exceptions import RequestException;
 
+from .const import (ECOBEE_ACCESS_TOKEN,
+                    ECOBEE_API_KEY,
+                    ECOBEE_AUTHORIZATION_CODE,
+                    ECOBEE_CONFIG_FILENAME,
+                    ECOBEE_REFRESH_TOKEN)
+from .errors import ExpiredTokenError
+
 logger = logging.getLogger('pyecobee')
 
 
@@ -36,9 +43,13 @@ class Ecobee(object):
     ''' Class for storing Ecobee Thermostats and Sensors '''
 
     def __init__(self, config_filename=None, api_key=None, config=None):
-        self.thermostats = list()
+        self.thermostats = None
         self.pin = None
         self.authenticated = False
+        self.api_key = None
+        self.access_token = None
+        self.authorization_code = None
+        self.refresh_token = None
 
         if config is None:
             self.file_based_config = True
@@ -46,35 +57,25 @@ class Ecobee(object):
                 if api_key is None:
                     logger.error("Error. No API Key was supplied.")
                     return
-                jsonconfig = {"API_KEY": api_key}
-                config_filename = 'ecobee.conf'
+                jsonconfig = {ECOBEE_API_KEY: api_key}
+                config_filename = ECOBEE_CONFIG_FILENAME
                 config_from_file(config_filename, jsonconfig)
             config = config_from_file(config_filename)
         else:
             self.file_based_config = False
-        self.api_key = config['API_KEY']
+        self.api_key = config[ECOBEE_API_KEY]
         self.config_filename = config_filename
 
-        if 'ACCESS_TOKEN' in config:
-            self.access_token = config['ACCESS_TOKEN']
-        else:
-            self.access_token = ''
+        if ECOBEE_ACCESS_TOKEN in config:
+            self.access_token = config[ECOBEE_ACCESS_TOKEN]
 
-        if 'AUTHORIZATION_CODE' in config:
-            self.authorization_code = config['AUTHORIZATION_CODE']
-        else:
-            self.authorization_code = ''
+        if ECOBEE_AUTHORIZATION_CODE in config:
+            self.authorization_code = config[ECOBEE_AUTHORIZATION_CODE]
 
-        if 'REFRESH_TOKEN' in config:
-            self.refresh_token = config['REFRESH_TOKEN']
-        else:
-            self.refresh_token = ''
-            self.request_pin()
-            return
+        if ECOBEE_REFRESH_TOKEN in config:
+            self.refresh_token = config[ECOBEE_REFRESH_TOKEN]
 
-        self.update()
-
-    def request_pin(self):
+    def request_pin(self) -> bool:
         ''' Method to request a PIN from ecobee for authorization '''
         url = 'https://api.ecobee.com/authorize'
         params = {'response_type': 'ecobeePin',
@@ -84,16 +85,22 @@ class Ecobee(object):
         except RequestException:
             logger.warn("Error connecting to Ecobee.  Possible connectivity outage."
                         "Could not request pin.")
-            return
-        self.authorization_code = request.json()['code']
-        self.pin = request.json()['ecobeePin']
-        logger.error('Please authorize your ecobee developer app with PIN code '
-              + self.pin + '\nGoto https://www.ecobee.com/consumerportal'
-              '/index.html, click\nMy Apps, Add application, Enter Pin'
-              ' and click Authorize.\nAfter authorizing, call request_'
-              'tokens() method.')
+            return False
+        if request.status_code == requests.codes.ok:
+            self.authorization_code = request.json()['code']
+            self.pin = request.json()['ecobeePin']
+            logger.info('Please authorize your ecobee developer app with PIN code '
+                  + self.pin + '\nGoto https://www.ecobee.com/consumerportal'
+                  '/index.html, click\nMy Apps, Add application, Enter Pin'
+                  ' and click Authorize.\nAfter authorizing, call request_'
+                  'tokens() method.')
+            return True
+        else:
+            logger.warn('Error while requesting pin from ecobee.com.'
+                        ' Status code: ' + str(request.status_code))
+            return False
 
-    def request_tokens(self):
+    def request_tokens(self) -> bool:
         ''' Method to request API tokens from ecobee '''
         url = 'https://api.ecobee.com/token'
         params = {'grant_type': 'ecobeePin', 'code': self.authorization_code,
@@ -103,31 +110,39 @@ class Ecobee(object):
         except RequestException:
             logger.warn("Error connecting to Ecobee.  Possible connectivity outage."
                         "Could not request token.")
-            return
+            return False
         if request.status_code == requests.codes.ok:
             self.access_token = request.json()['access_token']
             self.refresh_token = request.json()['refresh_token']
             self.write_tokens_to_file()
             self.pin = None
+            return True
         else:
             logger.warn('Error while requesting tokens from ecobee.com.'
                   ' Status code: ' + str(request.status_code))
-            return
+            return False
 
-    def refresh_tokens(self):
+    def refresh_tokens(self) -> bool:
         ''' Method to refresh API tokens from ecobee '''
         url = 'https://api.ecobee.com/token'
         params = {'grant_type': 'refresh_token',
                   'refresh_token': self.refresh_token,
                   'client_id': self.api_key}
-        request = requests.post(url, params=params)
+        try:
+            request = requests.post(url, params=params)
+        except RequestException:
+            logger.warn("Error connecting to Ecobee.  Possible connectivity outage."
+                        "Could not refresh token.")
+            return False
         if request.status_code == requests.codes.ok:
             self.access_token = request.json()['access_token']
             self.refresh_token = request.json()['refresh_token']
             self.write_tokens_to_file()
             return True
         else:
-            self.request_pin()
+            logger.warn('Error while refreshing tokens from ecobee.com.'
+                  ' Status code: ' + str(request.status_code))
+            return False
 
     def get_thermostats(self):
         ''' Set self.thermostats to a json list of thermostats from ecobee '''
@@ -151,14 +166,13 @@ class Ecobee(object):
             self.authenticated = True
             self.thermostats = request.json()['thermostatList']
             return self.thermostats
-        else:
+        elif request.status_code in [400, 401]:
             self.authenticated = False
+            raise ExpiredTokenError("Tokens have expired. Request new tokens from ecobee.")
+        else:
             logger.info("Error connecting to Ecobee while attempting to get "
-                  "thermostat data.  Refreshing tokens and trying again.")
-            if self.refresh_tokens():
-                return self.get_thermostats()
-            else:
-                return None
+                  "thermostat data.  ")
+            return None
 
     def get_thermostat(self, index):
         ''' Return a single thermostat based on index '''
@@ -171,10 +185,10 @@ class Ecobee(object):
     def write_tokens_to_file(self):
         ''' Write api tokens to a file '''
         config = dict()
-        config['API_KEY'] = self.api_key
-        config['ACCESS_TOKEN'] = self.access_token
-        config['REFRESH_TOKEN'] = self.refresh_token
-        config['AUTHORIZATION_CODE'] = self.authorization_code
+        config[ECOBEE_API_KEY] = self.api_key
+        config[ECOBEE_ACCESS_TOKEN] = self.access_token
+        config[ECOBEE_REFRESH_TOKEN] = self.refresh_token
+        config[ECOBEE_AUTHORIZATION_CODE] = self.authorization_code
         if self.file_based_config:
             config_from_file(self.config_filename, config)
         else:
@@ -196,11 +210,11 @@ class Ecobee(object):
             return None
         if request.status_code == requests.codes.ok:
             return request
-        elif (request.status_code == 401 and retry_count == 0 and
-              request.json()['error'] == 'authorization_expired'):
+        elif request.status_code in [400, 401] and retry_count == 0:
             if self.refresh_tokens():
-                return self.make_request(body, log_msg_action,
-                                         retry_count=retry_count + 1)
+                return self.make_request(
+                    body, log_msg_action, retry_count=retry_count + 1
+                )
         else:
             logger.info(
                 "Error fetching data from Ecobee while attempting to %s: %s",

@@ -198,7 +198,7 @@ class Ecobee(object):
         ''' Get new thermostat data from ecobee '''
         self.get_thermostats()
 
-    def make_request(self, body, log_msg_action):
+    def make_request(self, body, log_msg_action, *, retry_count=0):
         url = 'https://api.ecobee.com/1/thermostat'
         header = {'Content-Type': 'application/json;charset=UTF-8',
                   'Authorization': 'Bearer ' + self.access_token}
@@ -210,8 +210,11 @@ class Ecobee(object):
             return None
         if request.status_code == requests.codes.ok:
             return request
-        elif request.status_code == 400:
-            raise ExpiredTokenError("Tokens have expired. Request new tokens from ecobee.")
+        elif request.status_code in [400, 401] and retry_count == 0:
+            if self.refresh_tokens():
+                return self.make_request(
+                    body, log_msg_action, retry_count=retry_count + 1
+                )
         else:
             logger.info(
                 "Error fetching data from Ecobee while attempting to %s: %s",

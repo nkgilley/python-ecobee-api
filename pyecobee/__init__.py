@@ -292,7 +292,7 @@ class Ecobee(object):
                     "selectionType": "thermostats",
                     "selectionMatch": self.thermostats[index]['identifier']},
                 "functions": [{"type": "createVacation", "params": {
-                    "name": vacation_name
+                    "name": vacation_name,
                     "coolHoldTemp": int(cool_temp * 10),
                     "heatHoldTemp": int(heat_temp * 10),
                     "startDate": start_date,

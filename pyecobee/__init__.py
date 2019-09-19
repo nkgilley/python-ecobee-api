@@ -286,7 +286,7 @@ class Ecobee(object):
         return self.make_request(body, log_msg_action)
       
     def set_vacation(self, index, cool_temp, heat_temp, start_date=None, start_time=None,
-                     end_date=None, end_time=None, vacation_name=vacation):
+                     end_date=None, end_time=None, vacation_name="vacation"):
         ''' Set a vacation hold'''
         body = {"selection": {
                     "selectionType": "thermostats",

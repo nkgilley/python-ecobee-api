@@ -284,6 +284,26 @@ class Ecobee(object):
                 }}]}
         log_msg_action = "set climate hold"
         return self.make_request(body, log_msg_action)
+      
+    def create_vacation(self, index, vacation_name, cool_temp, heat_temp, start_date=None, start_time=None,
+                     end_date=None, end_time=None, fan_mode="auto", fan_min_on_time="0"):
+        ''' Create a vacation hold'''
+        body = {"selection": {
+                    "selectionType": "thermostats",
+                    "selectionMatch": self.thermostats[index]['identifier']},
+                "functions": [{"type": "createVacation", "params": {
+                    "name": vacation_name,
+                    "coolHoldTemp": int(cool_temp * 10),
+                    "heatHoldTemp": int(heat_temp * 10),
+                    "startDate": start_date,
+                    "startTime": start_time,
+                    "endDate": end_date,
+                    "endTime": end_time,
+                    "fan_mode": fan_mode,
+                    "fan_min_on_time": fan_min_on_time
+                }}]}
+        log_msg_action = "create vacation hold"
+        return self.make_request(body, log_msg_action)
 
     def delete_vacation(self, index, vacation):
         ''' Delete the vacation with name vacation '''

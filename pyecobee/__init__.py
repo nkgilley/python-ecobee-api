@@ -285,9 +285,9 @@ class Ecobee(object):
         log_msg_action = "set climate hold"
         return self.make_request(body, log_msg_action)
       
-    def set_vacation(self, index, cool_temp, heat_temp, start_date=None, start_time=None,
+    def create_vacation(self, index, cool_temp, heat_temp, start_date=None, start_time=None,
                      end_date=None, end_time=None, vacation_name="vacation"):
-        ''' Set a vacation hold'''
+        ''' Create a vacation hold'''
         body = {"selection": {
                     "selectionType": "thermostats",
                     "selectionMatch": self.thermostats[index]['identifier']},
@@ -300,7 +300,7 @@ class Ecobee(object):
                     "endDate": end_date,
                     "endTime": end_time
                 }}]}
-        log_msg_action = "set vacation hold"
+        log_msg_action = "create vacation hold"
         return self.make_request(body, log_msg_action)
 
     def delete_vacation(self, index, vacation):

@@ -217,7 +217,7 @@ class Ecobee(object):
                 )
         else:
             logger.error(f"Error fetching data from ecobee while attempting to "
-                         f"{log_msg_action}: {request.json()}")
+                         f"{log_msg_action}: {request.status_code}: {request.json()}")
             return None
 
     def set_hvac_mode(self, index, hvac_mode):

@@ -21,15 +21,15 @@ ECOBEE_ENDPOINT_THERMOSTAT = "thermostat"
 ECOBEE_API_VERSION = "1"
 
 ECOBEE_MODEL_TO_NAME = {
-    "idtSmart": "ecobee Smart",
-    "idtEms": "ecobee Smart EMS",
-    "siSmart": "ecobee Si Smart",
-    "siEms": "ecobee Si EMS",
-    "athenaSmart": "ecobee3 Smart",
-    "athenaEms": "ecobee3 EMS",
-    "corSmart": "Carrier/Bryant Cor",
-    "nikeSmart": "ecobee3 lite Smart",
-    "nikeEms": "ecobee3 lite EMS",
-    "apolloSmart": "ecobee4 Smart",
-    "vulcanSmart": "ecobee4 Smart",
+    "idtSmart": "ecobee Smart Thermostat",
+    "idtEms": "ecobee Smart EMS Thermostat",
+    "siSmart": "ecobee Si Smart Thermostat",
+    "siEms": "ecobee Si EMS Thermostat",
+    "athenaSmart": "ecobee3 Smart Thermostat",
+    "athenaEms": "ecobee3 EMS Thermostat",
+    "corSmart": "Carrier/Bryant Cor Thermostat",
+    "nikeSmart": "ecobee3 lite Smart Thermostat",
+    "nikeEms": "ecobee3 lite EMS Thermostat",
+    "apolloSmart": "ecobee4 Smart Thermostat",
+    "vulcanSmart": "ecobee Smart Thermostat with Voice Control",
 }

@@ -546,7 +546,7 @@ class Ecobee(object):
                     f"Error from ecobee while attempting to {log_msg_action}: "
                     f"{response.status_code}: {response.json()}"
                 )
-        except RequestException:
+        except (RequestException, json.decoder.JSONDecodeError):
             _LOGGER.error(
                 f"Error connecting to ecobee while attempting to {log_msg_action}. "
                 f"Possible connectivity outage."

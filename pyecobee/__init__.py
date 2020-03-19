@@ -1,9 +1,13 @@
 """ Python Code for Communication with the Ecobee Thermostat """
-import json
 from typing import Optional
 
 import requests
 from requests.exceptions import HTTPError, RequestException
+
+try:
+    import simplejson as json
+except ImportError:
+    import json
 
 from .const import (
     _LOGGER,

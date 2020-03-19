@@ -1,7 +1,11 @@
 """Utility functions for the python-ecobee-api library."""
-import json
 import os
 from typing import Optional
+
+try:
+    import simplejson as json
+except ImportError:
+    import json
 
 from .const import _LOGGER
 

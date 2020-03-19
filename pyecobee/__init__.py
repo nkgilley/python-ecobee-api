@@ -508,15 +508,21 @@ class Ecobee(object):
                 method, url, headers=headers, params=params, json=body
             )
             _LOGGER.debug(
-                f"Request response: {response.status_code}: {response.json()}"
+                f"Request response: {response.status_code}: {response.text}"
             )
             response.raise_for_status()
             return response.json()
         except HTTPError:
+            json_payload = {}
+            try:
+                json_payload = response.json()
+            except json.decoder.JSONDecodeError:
+                _LOGGER.debug("Invalid JSON payload received")
+
             if auth_request:
                 if (
                     response.status_code == 400
-                    and response.json()["error"] == "invalid_grant"
+                    and json_payload.get("error") == "invalid_grant"
                 ):
                     raise InvalidTokenError(
                         "ecobee tokens invalid; re-authentication required"
@@ -524,10 +530,10 @@ class Ecobee(object):
                 else:
                     _LOGGER.error(
                         f"Error requesting authorization from ecobee: "
-                        f"{response.status_code}: {response.json()}"
+                        f"{response.status_code}: {json_payload}"
                     )
             elif response.status_code == 500:
-                code = response.json()["status"]["code"]
+                code = json_payload.get("status", {}).get("code")
                 if code in [1, 16]:
                     raise InvalidTokenError(
                         "ecobee tokens invalid; re-authentication required"
@@ -539,12 +545,12 @@ class Ecobee(object):
                 else:
                     _LOGGER.error(
                         f"Error from ecobee while attempting to {log_msg_action}: "
-                        f"{code}: {response.json()['status']['message']}"
+                        f"{code}: {json_payload.get('status', {}).get('message', 'Unknown error')}"
                     )
             else:
                 _LOGGER.error(
                     f"Error from ecobee while attempting to {log_msg_action}: "
-                    f"{response.status_code}: {response.json()}"
+                    f"{response.status_code}: {json_payload}"
                 )
         except (RequestException, json.decoder.JSONDecodeError):
             _LOGGER.error(

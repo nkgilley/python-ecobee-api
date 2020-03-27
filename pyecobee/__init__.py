@@ -2,7 +2,7 @@
 from typing import Optional
 
 import requests
-from requests.exceptions import HTTPError, RequestException
+from requests.exceptions import HTTPError, RequestException, Timeout
 
 try:
     import simplejson as json
@@ -17,6 +17,7 @@ from .const import (
     ECOBEE_AUTHORIZATION_CODE,
     ECOBEE_BASE_URL,
     ECOBEE_CONFIG_FILENAME,
+    ECOBEE_DEFAULT_TIMEOUT
     ECOBEE_ENDPOINT_AUTH,
     ECOBEE_ENDPOINT_THERMOSTAT,
     ECOBEE_ENDPOINT_TOKEN,
@@ -509,7 +510,7 @@ class Ecobee(object):
 
         try:
             response = requests.request(
-                method, url, headers=headers, params=params, json=body
+                method, url, headers=headers, params=params, json=body, timeout=ECOBEE_DEFAULT_TIMEOUT
             )
             _LOGGER.debug(
                 f"Request response: {response.status_code}: {response.text}"
@@ -556,6 +557,11 @@ class Ecobee(object):
                     f"Error from ecobee while attempting to {log_msg_action}: "
                     f"{response.status_code}: {json_payload}"
                 )
+        except Timeout:
+            _LOGGER.error(
+                f"Connection to ecobee timed out while attempting to {log_msg_action}. "
+                f"Possible connectivity outage."
+            )
         except (RequestException, json.decoder.JSONDecodeError):
             _LOGGER.error(
                 f"Error connecting to ecobee while attempting to {log_msg_action}. "

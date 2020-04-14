@@ -173,6 +173,8 @@ class Ecobee(object):
                 "includeEvents": "true",
                 "includeWeather": "true",
                 "includeSettings": "true",
+                "includeAlerts": "true",
+                "includeNotificationSettings": "true",
             }
         }
         params = {"json": json.dumps(param_string)}
@@ -195,6 +197,14 @@ class Ecobee(object):
     def get_remote_sensors(self, index: int) -> str:
         """Returns remote sensors from a thermostat based on list index of self.thermostats."""
         return self.thermostats[index]["remoteSensors"]
+    
+    def get_equipment_notifications(self, index: int) -> str:
+        """Returns equipment notifications from a thermostat based on list index of self.thermostats."""
+        return self.thermostats[index]["notificationSettings"]["equipment"]
+
+    def get_alerts(self, index: int) -> str:
+        """Returns alerts form a thermostat based on list index of self.thermostats."""
+        return self.thermostats[index]["alerts"]
 
     def update(self) -> bool:
         """Gets new thermostat data from ecobee; wrapper for get_thermostats."""

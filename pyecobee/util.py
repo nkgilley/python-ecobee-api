@@ -32,3 +32,6 @@ def config_from_file(filename: str, config: dict = None) -> Optional[str]:
                 return False
         else:
             return {}
+
+def convert_to_bool(input) -> bool:
+    return str(input).lower() in ["true", "1", "t", "y", "yes"]

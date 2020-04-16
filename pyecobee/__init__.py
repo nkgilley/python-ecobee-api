@@ -22,9 +22,10 @@ from .const import (
     ECOBEE_ENDPOINT_THERMOSTAT,
     ECOBEE_ENDPOINT_TOKEN,
     ECOBEE_REFRESH_TOKEN,
+    ECOBEE_OPTIONS_NOTIFICATIONS,
 )
 from .errors import ExpiredTokenError, InvalidTokenError
-from .util import config_from_file
+from .util import config_from_file, convert_to_bool
 
 
 class Ecobee(object):
@@ -39,6 +40,7 @@ class Ecobee(object):
         self.authorization_code = None
         self.access_token = None
         self.refresh_token = None
+        self.include_notifications = False
 
         if self.config_filename is None and self.config is None:
             _LOGGER.error("No ecobee credentials supplied, unable to continue")
@@ -53,6 +55,8 @@ class Ecobee(object):
                 self.authorization_code = self.config[ECOBEE_AUTHORIZATION_CODE]
             if ECOBEE_REFRESH_TOKEN in self.config:
                 self.refresh_token = self.config[ECOBEE_REFRESH_TOKEN]
+            if ECOBEE_OPTIONS_NOTIFICATIONS in self.config:
+                self.include_notifications = convert_to_bool(self.config[ECOBEE_OPTIONS_NOTIFICATIONS])
         else:
             self._file_based_config = True
 
@@ -67,6 +71,8 @@ class Ecobee(object):
                 self.authorization_code = self.config[ECOBEE_AUTHORIZATION_CODE]
             if ECOBEE_REFRESH_TOKEN in self.config:
                 self.refresh_token = self.config[ECOBEE_REFRESH_TOKEN]
+            if ECOBEE_OPTIONS_NOTIFICATIONS in self.config:
+                self.include_notifications = convert_to_bool(self.config[ECOBEE_OPTIONS_NOTIFICATIONS])
 
     def _write_config(self) -> None:
         """Writes API tokens to a file or self.config if self.file_based_config is False."""
@@ -75,6 +81,7 @@ class Ecobee(object):
         config[ECOBEE_ACCESS_TOKEN] = self.access_token
         config[ECOBEE_REFRESH_TOKEN] = self.refresh_token
         config[ECOBEE_AUTHORIZATION_CODE] = self.authorization_code
+        config[ECOBEE_OPTIONS_NOTIFICATIONS] = str(self.include_notifications)
         if self._file_based_config:
             config_from_file(self.config_filename, config)
         else:
@@ -173,10 +180,10 @@ class Ecobee(object):
                 "includeEvents": "true",
                 "includeWeather": "true",
                 "includeSettings": "true",
-                "includeAlerts": "true",
-                "includeNotificationSettings": "true",
             }
         }
+        if self.include_notifications:
+            param_string["selection"]["includeNotificationSettings"] = self.include_notifications
         params = {"json": json.dumps(param_string)}
         log_msg_action = "get thermostats"
 

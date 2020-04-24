@@ -286,6 +286,7 @@ class Ecobee(object):
         hold_type: str = "nextTransition",
     ) -> None:
         """Sets a hold temperature."""
+        hold_type = "holdHours"
         body = {
             "selection": {
                 "selectionType": "thermostats",
@@ -298,6 +299,7 @@ class Ecobee(object):
                         "holdType": hold_type,
                         "coolHoldTemp": int(cool_temp * 10),
                         "heatHoldTemp": int(heat_temp * 10),
+                        "holdHours": "2",
                     },
                 }
             ],

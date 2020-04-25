@@ -284,26 +284,44 @@ class Ecobee(object):
         cool_temp: int,
         heat_temp: int,
         hold_type: str = "nextTransition",
+        hold_hours: str = "2",
     ) -> None:
         """Sets a hold temperature."""
-        hold_type = "holdHours"
-        body = {
-            "selection": {
-                "selectionType": "thermostats",
-                "selectionMatch": self.thermostats[index]["identifier"],
-            },
-            "functions": [
-                {
-                    "type": "setHold",
-                    "params": {
-                        "holdType": hold_type,
-                        "coolHoldTemp": int(cool_temp * 10),
-                        "heatHoldTemp": int(heat_temp * 10),
-                        "holdHours": "2",
-                    },
-                }
-            ],
-        }
+        if hold_type == "holdHours":
+            body = {
+                "selection": {
+                    "selectionType": "thermostats",
+                    "selectionMatch": self.thermostats[index]["identifier"],
+                },
+                "functions": [
+                    {
+                        "type": "setHold",
+                        "params": {
+                            "holdType": hold_type,
+                            "coolHoldTemp": int(cool_temp * 10),
+                            "heatHoldTemp": int(heat_temp * 10),
+                            "holdHours": hold_hours,
+                        },
+                    }
+                ],
+            }
+        else:
+            body = {
+                "selection": {
+                    "selectionType": "thermostats",
+                    "selectionMatch": self.thermostats[index]["identifier"],
+                },
+                "functions": [
+                    {
+                        "type": "setHold",
+                        "params": {
+                            "holdType": hold_type,
+                            "coolHoldTemp": int(cool_temp * 10),
+                            "heatHoldTemp": int(heat_temp * 10),
+                        },
+                    }
+                ],
+            }
         log_msg_action = "set hold temp"
 
         try:

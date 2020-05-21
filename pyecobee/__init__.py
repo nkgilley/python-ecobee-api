@@ -114,7 +114,8 @@ class Ecobee(object):
                 f"After authorizing, call request_tokens method."
             )
             return True
-        except (KeyError, TypeError):
+        except (KeyError, TypeError) as err:
+            _LOGGER.debug(f"Error obtaining PIN code from ecobee: {err}")
             return False
 
     def request_tokens(self) -> bool:
@@ -139,8 +140,11 @@ class Ecobee(object):
             self.refresh_token = response["refresh_token"]
             self._write_config()
             self.pin = None
+            _LOGGER.debug(f"Obtained tokens from ecobee: access {self.access_token}, "
+                          f"refresh {self.refresh_token}")
             return True
-        except (KeyError, TypeError):
+        except (KeyError, TypeError) as err:
+            _LOGGER.debug(f"Error obtaining tokens from ecobee: {err}")
             return False
 
     def refresh_tokens(self) -> bool:
@@ -164,8 +168,11 @@ class Ecobee(object):
             self.access_token = response["access_token"]
             self.refresh_token = response["refresh_token"]
             self._write_config()
+            _LOGGER.debug(f"Refreshed tokens from ecobee: access {self.access_token}, "
+                          f"refresh {self.refresh_token}")
             return True
-        except (KeyError, TypeError):
+        except (KeyError, TypeError) as err:
+            _LOGGER.debug(f"Error refreshing tokens from ecobee: {err}")
             return False
 
     def get_thermostats(self) -> bool:

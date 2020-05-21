@@ -532,9 +532,15 @@ class Ecobee(object):
             response = requests.request(
                 method, url, headers=headers, params=params, json=body, timeout=ECOBEE_DEFAULT_TIMEOUT
             )
+
+            try:
+                log_msg = response.json()
+            except:
+                log_msg = response.text
             _LOGGER.debug(
-                f"Request response: {response.status_code}: {response.text}"
+                f"Request response: {response.status_code}: {log_msg}"
             )
+            
             response.raise_for_status()
             return response.json()
         except HTTPError:

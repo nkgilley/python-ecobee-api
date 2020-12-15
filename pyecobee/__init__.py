@@ -389,8 +389,8 @@ class Ecobee(object):
                         "startTime": start_time,
                         "endDate": end_date,
                         "endTime": end_time,
-                        "fan_mode": fan_mode,
-                        "fan_min_on_time": fan_min_on_time,
+                        "fan": fan_mode,
+                        "fanMinOnTime": fan_min_on_time,
                     },
                 }
             ],

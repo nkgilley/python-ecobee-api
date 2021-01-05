@@ -455,6 +455,22 @@ class Ecobee(object):
         except (ExpiredTokenError, InvalidTokenError) as err:
             raise err
 
+    def set_humidifier_mode(self, index: int, humidifier_mode: str) -> None:
+        """Sets the humidifier mode (auto, off, manual)."""
+        body = {
+            "selection": {
+                "selectionType": "thermostats",
+                "selectionMatch": self.thermostats[index]["identifier"],
+            },
+            "thermostat": {"settings": {"humidifierMode": humidifier_mode}},
+        }
+        log_msg_action = "set humidifier mode"
+
+        try:
+            self._request("POST", ECOBEE_ENDPOINT_THERMOSTAT, log_msg_action, body=body)
+        except (ExpiredTokenError, InvalidTokenError) as err:
+            raise err
+
     def set_humidity(self, index: int, humidity: str) -> None:
         """Sets target humidity level."""
         body = {

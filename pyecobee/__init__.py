@@ -337,7 +337,7 @@ class Ecobee(object):
             raise err
 
     def set_climate_hold(
-        self, index: int, climate: str, hold_type: str = "nextTransition"
+        self, index: int, climate: str, hold_type: str = "nextTransition", hold_hours: int = None
     ) -> None:
         """Sets a climate hold (away, home, sleep)."""
         body = {
@@ -348,10 +348,14 @@ class Ecobee(object):
             "functions": [
                 {
                     "type": "setHold",
-                    "params": {"holdType": hold_type, "holdClimateRef": climate},
+                    "params": {"holdType": hold_type, "holdClimateRef": climate, "holdHours": hold_hours},
                 }
             ],
         }
+
+        if hold_type is not "holdHours":
+            del body["functions"][0]["params"]["holdHours"]
+
         log_msg_action = "set climate hold"
 
         try:

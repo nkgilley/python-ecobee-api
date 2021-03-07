@@ -562,6 +562,10 @@ class Ecobee(object):
                 "Content-Type": "application/json;charset=UTF-8",
                 "Authorization": f"Bearer {self.access_token}",
             }
+        else:
+            headers = {
+                "Content-Type": "application/json;charset=UTF-8",
+            }
 
         _LOGGER.debug(
             f"Making request to {endpoint} endpoint to {log_msg_action}: "

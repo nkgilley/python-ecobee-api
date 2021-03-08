@@ -259,25 +259,46 @@ class Ecobee(object):
         cool_temp: int,
         heat_temp: int,
         hold_type: str = "nextTransition",
+        hold_hours: str = "2",
     ) -> None:
         """Sets the fan mode (auto, minontime, on)."""
-        body = {
-            "selection": {
-                "selectionType": "thermostats",
-                "selectionMatch": self.thermostats[index]["identifier"],
-            },
-            "functions": [
-                {
-                    "type": "setHold",
-                    "params": {
-                        "holdType": hold_type,
-                        "coolHoldTemp": int(cool_temp * 10),
-                        "heatHoldTemp": int(heat_temp * 10),
-                        "fan": fan_mode,
-                    },
-                }
-            ],
-        }
+        if hold_type == "holdHours":
+            body = {
+                "selection": {
+                    "selectionType": "thermostats",
+                    "selectionMatch": self.thermostats[index]["identifier"],
+                },
+                "functions": [
+                    {
+                        "type": "setHold",
+                        "params": {
+                            "holdType": hold_type,
+                            "coolHoldTemp": int(cool_temp * 10),
+                            "heatHoldTemp": int(heat_temp * 10),
+                            "fan": fan_mode,
+                            "holdHours": hold_hours,
+                        },
+                    }
+                ],
+            }
+        else:
+            body = {
+                "selection": {
+                    "selectionType": "thermostats",
+                    "selectionMatch": self.thermostats[index]["identifier"],
+                },
+                "functions": [
+                    {
+                        "type": "setHold",
+                        "params": {
+                            "holdType": hold_type,
+                            "coolHoldTemp": int(cool_temp * 10),
+                            "heatHoldTemp": int(heat_temp * 10),
+                            "fan": fan_mode,
+                        },
+                    }
+                ],
+            }
         log_msg_action = "set fan mode"
 
         try:
@@ -353,7 +374,7 @@ class Ecobee(object):
             ],
         }
 
-        if hold_type is not "holdHours":
+        if hold_type != "holdHours":
             del body["functions"][0]["params"]["holdHours"]
 
         log_msg_action = "set climate hold"

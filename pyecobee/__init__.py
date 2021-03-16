@@ -259,7 +259,13 @@ class Ecobee(object):
         hold_type: str,
         **optional_arg,
     ) -> None:
-        """Sets the fan mode (auto, minontime, on)."""
+        """
+        Sets the fan mode (auto, minontime, on).
+            valid optional_arg
+                holdHours - required if HoldType is holdHours
+                coolHoldTemp
+                heatHoldTemp
+        """
         body = {
             "selection": {
                 "selectionType": "thermostats",

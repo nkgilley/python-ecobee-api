@@ -642,9 +642,14 @@ class Ecobee(object):
                 f"Connection to ecobee timed out while attempting to {log_msg_action}. "
                 f"Possible connectivity outage."
             )
-        except (RequestException, json.decoder.JSONDecodeError):
+        except json.decoder.JSONDecodeError:
+            _LOGGER.error(
+                f"Error decoding response from ecobee while attempting to {log_msg_action}. "
+            )
+        except RequestException as err:
             _LOGGER.error(
                 f"Error connecting to ecobee while attempting to {log_msg_action}. "
-                f"Possible connectivity outage."
+                f"Possible connectivity outage.\n"
+                f"{err}"
             )
         return None

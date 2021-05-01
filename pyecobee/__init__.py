@@ -557,6 +557,86 @@ class Ecobee(object):
         except (ExpiredTokenError, InvalidTokenError) as err:
             raise err
 
+    def set_vent_mode(self, index: int, vent_mode: str) -> None:
+        """Sets the ventilator mode. Values: auto, minontime, on, off."""
+        body = {
+            "selection": {
+                "selectionType": "thermostats",
+                "selectionMatch": self.thermostats[index]["identifier"],
+            },
+            "thermostat": {"settings": {"vent": vent_mode}},
+        }
+        log_msg_action = "set vent mode"
+
+        try:
+            self._request("POST", ECOBEE_ENDPOINT_THERMOSTAT, log_msg_action, body=body)
+        except (ExpiredTokenError, InvalidTokenError) as err:
+            raise err
+
+    def set_ventilator_min_on_time(self, index: int, ventilator_min_on_time: int) -> None:
+        """Sets the minimum time in minutes the ventilator is configured to run."""
+        body = {
+            "selection": {
+                "selectionType": "thermostats",
+                "selectionMatch": self.thermostats[index]["identifier"],
+            },
+            "thermostat": {"settings": {"ventilatorMinOnTime": ventilator_min_on_time}},
+        }
+        log_msg_action = "set ventilator minimum on time"
+
+        try:
+            self._request("POST", ECOBEE_ENDPOINT_THERMOSTAT, log_msg_action, body=body)
+        except (ExpiredTokenError, InvalidTokenError) as err:
+            raise err
+
+    def set_ventilator_min_on_time_home(self, index: int, ventilator_min_on_time_home: int) -> None:
+        """Sets the number of minutes to run ventilator per hour when home."""
+        body = {
+            "selection": {
+                "selectionType": "thermostats",
+                "selectionMatch": self.thermostats[index]["identifier"],
+            },
+            "thermostat": {"settings": {"ventilatorMinOnTimeHome": ventilator_min_on_time_home}},
+        }
+        log_msg_action = "set ventilator minimum on time when homw"
+
+        try:
+            self._request("POST", ECOBEE_ENDPOINT_THERMOSTAT, log_msg_action, body=body)
+        except (ExpiredTokenError, InvalidTokenError) as err:
+            raise err
+
+    def set_ventilator_min_on_time_away(self, index: int, ventilator_min_on_time_away: int) -> None:
+        """Sets the number of minutes to run ventilator per hour when away."""
+        body = {
+            "selection": {
+                "selectionType": "thermostats",
+                "selectionMatch": self.thermostats[index]["identifier"],
+            },
+            "thermostat": {"settings": {"ventilatorMinOnTimeAway": ventilator_min_on_time_away}},
+        }
+        log_msg_action = "set ventilator minimum on time when away"
+
+        try:
+            self._request("POST", ECOBEE_ENDPOINT_THERMOSTAT, log_msg_action, body=body)
+        except (ExpiredTokenError, InvalidTokenError) as err:
+            raise err
+
+    def set_ventilator_timer(self, index: int, ventilator_on: bool) -> None:
+        """Sets whether the ventilator timer is on or off."""
+        body = {
+            "selection": {
+                "selectionType": "thermostats",
+                "selectionMatch": self.thermostats[index]["identifier"],
+            },
+            "thermostat": {"settings": {"isVentilatorTimerOn": ventilator_on}},
+        }
+        log_msg_action = "set ventilator timer"
+
+        try:
+            self._request("POST", ECOBEE_ENDPOINT_THERMOSTAT, log_msg_action, body=body)
+        except (ExpiredTokenError, InvalidTokenError) as err:
+            raise err
+
     def _request(
         self,
         method: str,

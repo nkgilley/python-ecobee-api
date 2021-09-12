@@ -302,8 +302,8 @@ class Ecobee(object):
     def set_hold_temp(
         self,
         index: int,
-        cool_temp: int,
-        heat_temp: int,
+        cool_temp: float,
+        heat_temp: float,
         hold_type: str = "nextTransition",
         hold_hours: str = "2",
     ) -> None:
@@ -381,8 +381,8 @@ class Ecobee(object):
         self,
         index: int,
         vacation_name: str,
-        cool_temp: int,
-        heat_temp: int,
+        cool_temp: float,
+        heat_temp: float,
         start_date: str = None,
         start_time: str = None,
         end_date: str = None,

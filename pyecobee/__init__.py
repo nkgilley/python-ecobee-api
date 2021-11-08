@@ -194,7 +194,7 @@ class Ecobee(object):
         params = {"json": json.dumps(param_string)}
         log_msg_action = "get thermostats"
 
-        response = self._request(
+        response = self._request_with_refresh(
             "GET", ECOBEE_ENDPOINT_THERMOSTAT, log_msg_action, params=params
         )
 
@@ -232,7 +232,9 @@ class Ecobee(object):
         log_msg_action = "set HVAC mode"
 
         try:
-            self._request("POST", ECOBEE_ENDPOINT_THERMOSTAT, log_msg_action, body=body)
+            self._request_with_refresh(
+                "POST", ECOBEE_ENDPOINT_THERMOSTAT, log_msg_action, body=body
+            )
         except (ExpiredTokenError, InvalidTokenError) as err:
             raise err
 
@@ -248,7 +250,9 @@ class Ecobee(object):
         log_msg_action = "set fan minimum on time"
 
         try:
-            self._request("POST", ECOBEE_ENDPOINT_THERMOSTAT, log_msg_action, body=body)
+            self._request_with_refresh(
+                "POST", ECOBEE_ENDPOINT_THERMOSTAT, log_msg_action, body=body
+            )
         except (ExpiredTokenError, InvalidTokenError) as err:
             raise err
 
@@ -295,7 +299,9 @@ class Ecobee(object):
         log_msg_action = "set fan mode"
 
         try:
-            self._request("POST", ECOBEE_ENDPOINT_THERMOSTAT, log_msg_action, body=body)
+            self._request_with_refresh(
+                "POST", ECOBEE_ENDPOINT_THERMOSTAT, log_msg_action, body=body
+            )
         except (ExpiredTokenError, InvalidTokenError) as err:
             raise err
 
@@ -346,7 +352,9 @@ class Ecobee(object):
         log_msg_action = "set hold temp"
 
         try:
-            self._request("POST", ECOBEE_ENDPOINT_THERMOSTAT, log_msg_action, body=body)
+            self._request_with_refresh(
+                "POST", ECOBEE_ENDPOINT_THERMOSTAT, log_msg_action, body=body
+            )
         except (ExpiredTokenError, InvalidTokenError) as err:
             raise err
 
@@ -373,7 +381,9 @@ class Ecobee(object):
         log_msg_action = "set climate hold"
 
         try:
-            self._request("POST", ECOBEE_ENDPOINT_THERMOSTAT, log_msg_action, body=body)
+            self._request_with_refresh(
+                "POST", ECOBEE_ENDPOINT_THERMOSTAT, log_msg_action, body=body
+            )
         except (ExpiredTokenError, InvalidTokenError) as err:
             raise err
 
@@ -416,7 +426,9 @@ class Ecobee(object):
         log_msg_action = "create a vacation"
 
         try:
-            self._request("POST", ECOBEE_ENDPOINT_THERMOSTAT, log_msg_action, body=body)
+            self._request_with_refresh(
+                "POST", ECOBEE_ENDPOINT_THERMOSTAT, log_msg_action, body=body
+            )
         except (ExpiredTokenError, InvalidTokenError) as err:
             raise err
 
@@ -432,7 +444,9 @@ class Ecobee(object):
         log_msg_action = "delete a vacation"
 
         try:
-            self._request("POST", ECOBEE_ENDPOINT_THERMOSTAT, log_msg_action, body=body)
+            self._request_with_refresh(
+                "POST", ECOBEE_ENDPOINT_THERMOSTAT, log_msg_action, body=body
+            )
         except (ExpiredTokenError, InvalidTokenError) as err:
             raise err
 
@@ -450,7 +464,9 @@ class Ecobee(object):
         log_msg_action = "resume program"
 
         try:
-            self._request("POST", ECOBEE_ENDPOINT_THERMOSTAT, log_msg_action, body=body)
+            self._request_with_refresh(
+                "POST", ECOBEE_ENDPOINT_THERMOSTAT, log_msg_action, body=body
+            )
         except (ExpiredTokenError, InvalidTokenError) as err:
             raise err
 
@@ -469,7 +485,9 @@ class Ecobee(object):
         log_msg_action = "send message"
 
         try:
-            self._request("POST", ECOBEE_ENDPOINT_THERMOSTAT, log_msg_action, body=body)
+            self._request_with_refresh(
+                "POST", ECOBEE_ENDPOINT_THERMOSTAT, log_msg_action, body=body
+            )
         except (ExpiredTokenError, InvalidTokenError) as err:
             raise err
 
@@ -485,7 +503,9 @@ class Ecobee(object):
         log_msg_action = "set humidifier mode"
 
         try:
-            self._request("POST", ECOBEE_ENDPOINT_THERMOSTAT, log_msg_action, body=body)
+            self._request_with_refresh(
+                "POST", ECOBEE_ENDPOINT_THERMOSTAT, log_msg_action, body=body
+            )
         except (ExpiredTokenError, InvalidTokenError) as err:
             raise err
 
@@ -501,7 +521,9 @@ class Ecobee(object):
         log_msg_action = "set humidity level"
 
         try:
-            self._request("POST", ECOBEE_ENDPOINT_THERMOSTAT, log_msg_action, body=body)
+            self._request_with_refresh(
+                "POST", ECOBEE_ENDPOINT_THERMOSTAT, log_msg_action, body=body
+            )
         except (ExpiredTokenError, InvalidTokenError) as err:
             raise err
 
@@ -517,7 +539,9 @@ class Ecobee(object):
         log_msg_action = "set mic mode"
 
         try:
-            self._request("POST", ECOBEE_ENDPOINT_THERMOSTAT, log_msg_action, body=body)
+            self._request_with_refresh(
+                "POST", ECOBEE_ENDPOINT_THERMOSTAT, log_msg_action, body=body
+            )
         except (ExpiredTokenError, InvalidTokenError) as err:
             raise err
 
@@ -537,7 +561,9 @@ class Ecobee(object):
         log_msg_action = "set occupancy modes"
 
         try:
-            self._request("POST", ECOBEE_ENDPOINT_THERMOSTAT, log_msg_action, body=body)
+            self._request_with_refresh(
+                "POST", ECOBEE_ENDPOINT_THERMOSTAT, log_msg_action, body=body
+            )
         except (ExpiredTokenError, InvalidTokenError) as err:
             raise err
 
@@ -553,7 +579,9 @@ class Ecobee(object):
         log_msg_action = "set dst mode"
 
         try:
-            self._request("POST", ECOBEE_ENDPOINT_THERMOSTAT, log_msg_action, body=body)
+            self._request_with_refresh(
+                "POST", ECOBEE_ENDPOINT_THERMOSTAT, log_msg_action, body=body
+            )
         except (ExpiredTokenError, InvalidTokenError) as err:
             raise err
 
@@ -569,7 +597,9 @@ class Ecobee(object):
         log_msg_action = "set vent mode"
 
         try:
-            self._request("POST", ECOBEE_ENDPOINT_THERMOSTAT, log_msg_action, body=body)
+            self._request_with_refresh(
+                "POST", ECOBEE_ENDPOINT_THERMOSTAT, log_msg_action, body=body
+            )
         except (ExpiredTokenError, InvalidTokenError) as err:
             raise err
 
@@ -585,7 +615,9 @@ class Ecobee(object):
         log_msg_action = "set ventilator minimum on time"
 
         try:
-            self._request("POST", ECOBEE_ENDPOINT_THERMOSTAT, log_msg_action, body=body)
+            self._request_with_refresh(
+                "POST", ECOBEE_ENDPOINT_THERMOSTAT, log_msg_action, body=body
+            )
         except (ExpiredTokenError, InvalidTokenError) as err:
             raise err
 
@@ -601,7 +633,9 @@ class Ecobee(object):
         log_msg_action = "set ventilator minimum on time when homw"
 
         try:
-            self._request("POST", ECOBEE_ENDPOINT_THERMOSTAT, log_msg_action, body=body)
+            self._request_with_refresh(
+                "POST", ECOBEE_ENDPOINT_THERMOSTAT, log_msg_action, body=body
+            )
         except (ExpiredTokenError, InvalidTokenError) as err:
             raise err
 
@@ -617,7 +651,9 @@ class Ecobee(object):
         log_msg_action = "set ventilator minimum on time when away"
 
         try:
-            self._request("POST", ECOBEE_ENDPOINT_THERMOSTAT, log_msg_action, body=body)
+            self._request_with_refresh(
+                "POST", ECOBEE_ENDPOINT_THERMOSTAT, log_msg_action, body=body
+            )
         except (ExpiredTokenError, InvalidTokenError) as err:
             raise err
 
@@ -633,9 +669,49 @@ class Ecobee(object):
         log_msg_action = "set ventilator timer"
 
         try:
-            self._request("POST", ECOBEE_ENDPOINT_THERMOSTAT, log_msg_action, body=body)
+            self._request_with_refresh(
+                "POST", ECOBEE_ENDPOINT_THERMOSTAT, log_msg_action, body=body
+            )
         except (ExpiredTokenError, InvalidTokenError) as err:
             raise err
+
+    def _request_with_refresh(
+        self,
+        method: str,
+        endpoint: str,
+        log_msg_action: str,
+        params: dict = None,
+        body: dict = None,
+        auth_request: bool = False,
+    ) -> Optional[str]:
+        """
+        Wrapper around _request, to refresh tokens if needed.
+        If an ExpiredTokenError is seen call refresh_tokens and
+        try one more time. Otherwise, send the results up
+        """
+        response = None
+        refreshed = False
+        for _ in range(0, 2):
+            try:
+                response = self._request(
+                    method, endpoint, log_msg_action, params, body, auth_request
+                )
+            except ExpiredTokenError:
+                if not refreshed:
+                    # Refresh tokens and try again
+                    self.refresh_tokens()
+                    refreshed = True
+                    continue
+                else:
+                    # Send the exception up the stack otherwise
+                    raise
+            except InvalidTokenError:
+                raise
+
+            # Success, fall out of the loop
+            break
+
+        return response
 
     def _request(
         self,

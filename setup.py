@@ -39,6 +39,6 @@ setup(name='python-ecobee-api',
       author='Nolan Gilley',
       author_email='nkgilley@gmail.com',
       license='MIT',
-      install_requires=['requests>=2.0'],
+      install_requires=['requests>=2.25'],
       packages=['pyecobee'],
       zip_safe=True)

@@ -675,6 +675,24 @@ class Ecobee(object):
         except (ExpiredTokenError, InvalidTokenError) as err:
             raise err
 
+    def set_aux_cutover_threshold(self, index: int, threshold: int) -> None:
+        """Set the threshold for outdoor temp below which alt heat will be used."""
+        body = {
+            "selection": {
+                "selectionType": "thermostats",
+                "selectionMatch": self.thermostats[index]["identifier"],
+            },
+            "thermostat": {"settings": {"compressorProtectionMinTemp": int(threshold * 10)}},
+        }
+        log_msg_action = "set outdoor temp threshold for aux"
+
+        try:
+            self._request_with_refresh(
+                "POST", ECOBEE_ENDPOINT_THERMOSTAT, log_msg_action, body=body
+            )
+        except (ExpiredTokenError, InvalidTokenError) as err:
+            raise err
+
     def _request_with_refresh(
         self,
         method: str,

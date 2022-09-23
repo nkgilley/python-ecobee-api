@@ -693,6 +693,43 @@ class Ecobee(object):
         except (ExpiredTokenError, InvalidTokenError) as err:
             raise err
 
+    def update_climate_sensors(self, index: int, climate_name: str, sensor_names: list) -> None:
+        """Get current climate program."""
+        programs: dict = self.thermostats[index]["program"]
+        # Remove currentClimateRef key.
+        programs.pop("currentClimateRef", None)
+        program_to_edit = next(
+            climate for climate in programs["climates"] if climate["name"] == climate_name)
+
+        """Update climate sensors with sensor_names list."""
+        sensor_list = []
+        for name in sensor_names:
+            """Find the sensor id from the name."""
+            sensors = self.get_remote_sensors(index)
+            for sensor in sensors:
+                if sensor["name"] == name:
+                    sensor_list.append(
+                        {"id": "{}:1".format(sensor["id"]), "name": name})
+        program_to_edit["sensors"] = sensor_list
+        """Updates Climate"""
+        body = {
+            "selection": {
+                "selectionType": "thermostats",
+                "selectionMatch": self.thermostats[index]["identifier"],
+            },
+            "thermostat": {
+                "program": programs
+            }
+        }
+        log_msg_action = "upate climate sensors"
+
+        try:
+            self._request_with_refresh(
+                "POST", ECOBEE_ENDPOINT_THERMOSTAT, log_msg_action, body=body
+            )
+        except (ExpiredTokenError, InvalidTokenError) as err:
+            raise err
+
     def _request_with_refresh(
         self,
         method: str,

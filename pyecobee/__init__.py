@@ -698,9 +698,10 @@ class Ecobee(object):
         programs: dict = self.thermostats[index]["program"]
         # Remove currentClimateRef key.
         programs.pop("currentClimateRef", None)
-        program_to_edit = next(
-            climate for climate in programs["climates"] if climate["name"] == climate_name)
 
+        for i, climate in enumerate(programs["climates"]):
+            if climate["name"] == climate_name:
+                climate_index = i
         """Update climate sensors with sensor_names list."""
         sensor_list = []
         for name in sensor_names:
@@ -710,7 +711,13 @@ class Ecobee(object):
                 if sensor["name"] == name:
                     sensor_list.append(
                         {"id": "{}:1".format(sensor["id"]), "name": name})
-        program_to_edit["sensors"] = sensor_list
+        try:
+            programs["climates"][climate_index]["sensors"] = sensor_list
+        except UnboundLocalError:
+            """This would occur if the climate_index was not assigned
+                because the climate name does not exist in the program climates."""
+            return
+
         """Updates Climate"""
         body = {
             "selection": {

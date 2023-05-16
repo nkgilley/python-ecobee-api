@@ -491,6 +491,42 @@ class Ecobee(object):
         except (ExpiredTokenError, InvalidTokenError) as err:
             raise err
 
+    def set_dehumidifier_mode(self, index: int, dehumidifier_mode: str) -> None:
+        """Sets the dehumidifier mode (on, off)."""
+        body = {
+            "selection": {
+                "selectionType": "thermostats",
+                "selectionMatch": self.thermostats[index]["identifier"],
+            },
+            "thermostat": {"settings": {"dehumidifierMode": dehumidifier_mode}},
+        }
+        log_msg_action = "set dehumidifier mode"
+
+        try:
+            self._request_with_refresh(
+                "POST", ECOBEE_ENDPOINT_THERMOSTAT, log_msg_action, body=body
+            )
+        except (ExpiredTokenError, InvalidTokenError) as err:
+            raise err
+
+    def set_dehumidifier_level(self, index: int, dehumidifier_level: int) -> None:
+        """Sets the dehumidification set point in percentage."""
+        body = {
+            "selection": {
+                "selectionType": "thermostats",
+                "selectionMatch": self.thermostats[index]["identifier"],
+            },
+            "thermostat": {"settings": {"dehumidifierLevel": dehumidifier_level}},
+        }
+        log_msg_action = "set dehumidifier level"
+
+        try:
+            self._request_with_refresh(
+                "POST", ECOBEE_ENDPOINT_THERMOSTAT, log_msg_action, body=body
+            )
+        except (ExpiredTokenError, InvalidTokenError) as err:
+            raise err
+
     def set_humidifier_mode(self, index: int, humidifier_mode: str) -> None:
         """Sets the humidifier mode (auto, off, manual)."""
         body = {

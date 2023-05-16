@@ -516,7 +516,7 @@ class Ecobee(object):
                 "selectionType": "thermostats",
                 "selectionMatch": self.thermostats[index]["identifier"],
             },
-            "thermostat": {"settings": {"dehumidifierLevel": dehumidifier_level}},
+            "thermostat": {"settings": {"dehumidifierLevel": dehumidifier_level}}
         }
         log_msg_action = "set dehumidifier level"
 

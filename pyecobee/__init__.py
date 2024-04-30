@@ -187,6 +187,7 @@ class Ecobee(object):
                 "includeEvents": "true",
                 "includeWeather": "true",
                 "includeSettings": "true",
+                "includeLocation": "true",
             }
         }
         if self.include_notifications:
@@ -211,7 +212,7 @@ class Ecobee(object):
     def get_remote_sensors(self, index: int) -> str:
         """Returns remote sensors from a thermostat based on list index of self.thermostats."""
         return self.thermostats[index]["remoteSensors"]
-    
+
     def get_equipment_notifications(self, index: int) -> str:
         """Returns equipment notifications from a thermostat based on list index of self.thermostats."""
         return self.thermostats[index]["notificationSettings"]["equipment"]
@@ -848,7 +849,7 @@ class Ecobee(object):
             _LOGGER.debug(
                 f"Request response: {response.status_code}: {log_msg}"
             )
-            
+
             response.raise_for_status()
             return response.json()
         except HTTPError:

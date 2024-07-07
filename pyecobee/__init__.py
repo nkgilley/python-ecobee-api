@@ -1,4 +1,5 @@
 """ Python Code for Communication with the Ecobee Thermostat """
+import datetime
 from typing import Optional
 
 import requests
@@ -16,13 +17,16 @@ from .const import (
     ECOBEE_API_VERSION,
     ECOBEE_AUTHORIZATION_CODE,
     ECOBEE_BASE_URL,
+    ECOBEE_AUTH_BASE_URL,
     ECOBEE_CONFIG_FILENAME,
     ECOBEE_DEFAULT_TIMEOUT,
     ECOBEE_ENDPOINT_AUTH,
     ECOBEE_ENDPOINT_THERMOSTAT,
     ECOBEE_ENDPOINT_TOKEN,
     ECOBEE_REFRESH_TOKEN,
+    ECOBEE_AUTH0_TOKEN,
     ECOBEE_OPTIONS_NOTIFICATIONS,
+    ECOBEE_WEB_CLIENT_ID
 )
 from .errors import ExpiredTokenError, InvalidTokenError
 from .util import config_from_file, convert_to_bool
@@ -40,6 +44,7 @@ class Ecobee(object):
         self.authorization_code = None
         self.access_token = None
         self.refresh_token = None
+        self.auth0_token = None
         self.include_notifications = False
 
         if self.config_filename is None and self.config is None:
@@ -55,6 +60,8 @@ class Ecobee(object):
                 self.authorization_code = self.config[ECOBEE_AUTHORIZATION_CODE]
             if ECOBEE_REFRESH_TOKEN in self.config:
                 self.refresh_token = self.config[ECOBEE_REFRESH_TOKEN]
+            if ECOBEE_AUTH0_TOKEN in self.config:
+                self.auth0_token = self.config[ECOBEE_AUTH0_TOKEN]
             if ECOBEE_OPTIONS_NOTIFICATIONS in self.config:
                 self.include_notifications = convert_to_bool(self.config[ECOBEE_OPTIONS_NOTIFICATIONS])
         else:
@@ -71,6 +78,8 @@ class Ecobee(object):
                 self.authorization_code = self.config[ECOBEE_AUTHORIZATION_CODE]
             if ECOBEE_REFRESH_TOKEN in self.config:
                 self.refresh_token = self.config[ECOBEE_REFRESH_TOKEN]
+            if ECOBEE_AUTH0_TOKEN in self.config:
+                self.auth0_token = self.config[ECOBEE_AUTH0_TOKEN]
             if ECOBEE_OPTIONS_NOTIFICATIONS in self.config:
                 self.include_notifications = convert_to_bool(self.config[ECOBEE_OPTIONS_NOTIFICATIONS])
 
@@ -80,6 +89,7 @@ class Ecobee(object):
         config[ECOBEE_API_KEY] = self.api_key
         config[ECOBEE_ACCESS_TOKEN] = self.access_token
         config[ECOBEE_REFRESH_TOKEN] = self.refresh_token
+        config[ECOBEE_AUTH0_TOKEN] = self.auth0_token
         config[ECOBEE_AUTHORIZATION_CODE] = self.authorization_code
         config[ECOBEE_OPTIONS_NOTIFICATIONS] = str(self.include_notifications)
         if self._file_based_config:
@@ -120,6 +130,9 @@ class Ecobee(object):
 
     def request_tokens(self) -> bool:
         """Requests API tokens from ecobee."""
+        if self.auth0_token is not None:
+            return self.request_tokens_web()
+        
         params = {
             "grant_type": "ecobeePin",
             "code": self.authorization_code,
@@ -146,8 +159,50 @@ class Ecobee(object):
         except (KeyError, TypeError) as err:
             _LOGGER.debug(f"Error obtaining tokens from ecobee: {err}")
             return False
+        
+    def request_tokens_web(self) -> bool:
+        assert self.auth0_token is not None, "auth0 token must be set before calling request_tokens_web"
+
+        resp = requests.get(ECOBEE_AUTH_BASE_URL, cookies={"auth0": self.auth0_token}, params={
+            "client_id": ECOBEE_WEB_CLIENT_ID,
+            "scope": "smartWrite",
+            "response_type": "token",
+            "response_mode": "form_post",
+            "redirect_uri": "https://www.ecobee.com/home/authCallback",
+            "audience": "https://prod.ecobee.com/api/v1",
+        }, timeout=ECOBEE_DEFAULT_TIMEOUT)
+
+        if resp.status_code != 200:
+            _LOGGER.error(f"Failed to refresh access token: {resp.status_code} {resp.text}")
+            return False
+        
+        print("auth0:", resp.cookies["auth0"])
+
+        if (auth0 := resp.cookies.get("auth0")) is None:
+            _LOGGER.error("Failed to refresh access token: no auth0 cookie in response")
+        self.auth0_token = auth0
+
+        # Parse the response HTML for the access token and expiration
+        # <html><head><title>Submit This Form</title><meta http-equiv="X-UA-Compatible" content="IE=edge"></head><body onload="javascript:document.forms[0].submit()"><form method="post" action="https://www.ecobee.com/home/authCallback"><input type="hidden" name="access_token" value="eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IlJFWXhNVEpDT0Rnek9UaERRelJHTkRCRlFqZEdNVGxETnpaR1JUZzRNalEwTmtWR01UQkdPQSJ9.eyJpc3MiOiJodHRwczovL2F1dGguZWNvYmVlLmNvbS8iLCJzdWIiOiJhdXRoMHwzMTk1MGNmOC01YTAzLTRjMWQtYjY1Zi0xNTY3ZWRiNDQzNTIiLCJhdWQiOiJodHRwczovL3Byb2QuZWNvYmVlLmNvbS9hcGkvdjEiLCJpYXQiOjE3MjAzODY1MzUsImV4cCI6MTcyMDM5MDEzNSwic2NvcGUiOiJzbWFydFdyaXRlIiwiYXpwIjoiMTgzZU9SRlBsWHl6OUJiRFp3cWV4SFBCUW9WamdhZGgifQ.ea2upoLg6-SRfuRfuTPMoe_NI8ql0A-304Kn3wskzY4KkgBKpdSjO0UfWuAXecPWjPTwgwKS4WbK8jwAb38kukYh7mw1Zt20CTzy9V27izvUdACaUfJ0VegRcD4h-aac2ucKe3KPWJI3D2rnkQ81fyJqbeZ16VRNcL1gXDJcg_T2vaomcnYGklLDrmXmJhvFDvrELgpiCZmWP_q4kCZw3-7sYCR8ueDBZjii87GTuocM3Pn_VyM7WV-koIcLZzL42pFPBVVb9TVSiolRUSUU5dXSItMilKaJr7gIdMvUPMdNMdbyw59yi1mj8oiqMwnAVTwRCv9b4cP8VZsuDIHBYw"/><input type="hidden" name="scope" value="smartWrite"/><input type="hidden" name="expires_in" value="3600"/><input type="hidden" name="token_type" value="Bearer"/></form></body></html>
+        if (access_token := resp.text.split('name="access_token" value="')[1].split('"')[0]) is None:
+            _LOGGER.error("Failed to refresh bearer token: no access token in response")
+            return False
+        
+        self.access_token = access_token
+
+        if (expires_in := resp.text.split('name="expires_in" value="')[1].split('"')[0]) is None:
+            _LOGGER.error("Failed to refresh bearer token: no expiration in response")
+            return False
+
+        expires_at = datetime.datetime.now() + datetime.timedelta(seconds=int(expires_in))
+        _LOGGER.debug(f"Access token expires at {expires_at}")
+
+        return True
 
     def refresh_tokens(self) -> bool:
+        if self.auth0_token is not None:
+            return self.request_tokens_web()
+        
         """Refreshes ecobee API tokens."""
         params = {
             "grant_type": "refresh_token",

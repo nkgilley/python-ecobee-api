@@ -197,6 +197,8 @@ class Ecobee(object):
         expires_at = datetime.datetime.now() + datetime.timedelta(seconds=int(expires_in))
         _LOGGER.debug(f"Access token expires at {expires_at}")
 
+        self._write_config()
+        
         return True
 
     def refresh_tokens(self) -> bool:

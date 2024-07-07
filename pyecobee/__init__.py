@@ -163,7 +163,7 @@ class Ecobee(object):
     def request_tokens_web(self) -> bool:
         assert self.auth0_token is not None, "auth0 token must be set before calling request_tokens_web"
 
-        resp = requests.get(ECOBEE_AUTH_BASE_URL, cookies={"auth0": self.auth0_token}, params={
+        resp = requests.get(ECOBEE_AUTH_BASE_URL + "/" + ECOBEE_ENDPOINT_AUTH, cookies={"auth0": self.auth0_token}, params={
             "client_id": ECOBEE_WEB_CLIENT_ID,
             "scope": "smartWrite",
             "response_type": "token",

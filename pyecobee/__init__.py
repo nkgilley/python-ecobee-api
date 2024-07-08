@@ -176,14 +176,11 @@ class Ecobee(object):
             _LOGGER.error(f"Failed to refresh access token: {resp.status_code} {resp.text}")
             return False
         
-        print("auth0:", resp.cookies["auth0"])
-
         if (auth0 := resp.cookies.get("auth0")) is None:
             _LOGGER.error("Failed to refresh access token: no auth0 cookie in response")
         self.auth0_token = auth0
 
         # Parse the response HTML for the access token and expiration
-        # <html><head><title>Submit This Form</title><meta http-equiv="X-UA-Compatible" content="IE=edge"></head><body onload="javascript:document.forms[0].submit()"><form method="post" action="https://www.ecobee.com/home/authCallback"><input type="hidden" name="access_token" value="eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IlJFWXhNVEpDT0Rnek9UaERRelJHTkRCRlFqZEdNVGxETnpaR1JUZzRNalEwTmtWR01UQkdPQSJ9.eyJpc3MiOiJodHRwczovL2F1dGguZWNvYmVlLmNvbS8iLCJzdWIiOiJhdXRoMHwzMTk1MGNmOC01YTAzLTRjMWQtYjY1Zi0xNTY3ZWRiNDQzNTIiLCJhdWQiOiJodHRwczovL3Byb2QuZWNvYmVlLmNvbS9hcGkvdjEiLCJpYXQiOjE3MjAzODY1MzUsImV4cCI6MTcyMDM5MDEzNSwic2NvcGUiOiJzbWFydFdyaXRlIiwiYXpwIjoiMTgzZU9SRlBsWHl6OUJiRFp3cWV4SFBCUW9WamdhZGgifQ.ea2upoLg6-SRfuRfuTPMoe_NI8ql0A-304Kn3wskzY4KkgBKpdSjO0UfWuAXecPWjPTwgwKS4WbK8jwAb38kukYh7mw1Zt20CTzy9V27izvUdACaUfJ0VegRcD4h-aac2ucKe3KPWJI3D2rnkQ81fyJqbeZ16VRNcL1gXDJcg_T2vaomcnYGklLDrmXmJhvFDvrELgpiCZmWP_q4kCZw3-7sYCR8ueDBZjii87GTuocM3Pn_VyM7WV-koIcLZzL42pFPBVVb9TVSiolRUSUU5dXSItMilKaJr7gIdMvUPMdNMdbyw59yi1mj8oiqMwnAVTwRCv9b4cP8VZsuDIHBYw"/><input type="hidden" name="scope" value="smartWrite"/><input type="hidden" name="expires_in" value="3600"/><input type="hidden" name="token_type" value="Bearer"/></form></body></html>
         if (access_token := resp.text.split('name="access_token" value="')[1].split('"')[0]) is None:
             _LOGGER.error("Failed to refresh bearer token: no access token in response")
             return False
@@ -198,7 +195,7 @@ class Ecobee(object):
         _LOGGER.debug(f"Access token expires at {expires_at}")
 
         self._write_config()
-        
+
         return True
 
     def refresh_tokens(self) -> bool:

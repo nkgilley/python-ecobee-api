@@ -28,7 +28,7 @@ from .const import (
     ECOBEE_OPTIONS_NOTIFICATIONS,
     ECOBEE_WEB_CLIENT_ID
 )
-from .errors import ExpiredTokenError, InvalidTokenError
+from .errors import ExpiredTokenError, InvalidSensorError, InvalidTokenError
 from .util import config_from_file, convert_to_bool
 
 
@@ -784,8 +784,14 @@ class Ecobee(object):
         except (ExpiredTokenError, InvalidTokenError) as err:
             raise err
 
-    def update_climate_sensors(self, index: int, climate_name: str, sensor_names: list) -> None:
-        """Get current climate program."""
+    def update_climate_sensors(self, index: int, climate_name: str, sensor_names: Optional[list]=None, sensor_ids: Optional[list]=None) -> None:
+        """Get current climate program. Must provide either `sensor_names` or `ids`."""
+        # Ensure only either `sensor_names` or `ids` was provided.
+        if sensor_names is None and sensor_ids is None:
+            raise ValueError("Need to provide either `sensor_names` or `ids`.")
+        if sensor_names and sensor_ids:
+            raise ValueError("Either `sensor_names` or `ids` should be provided, not both.")
+
         programs: dict = self.thermostats[index]["program"]
         # Remove currentClimateRef key.
         programs.pop("currentClimateRef", None)
@@ -793,15 +799,29 @@ class Ecobee(object):
         for i, climate in enumerate(programs["climates"]):
             if climate["name"] == climate_name:
                 climate_index = i
-        """Update climate sensors with sensor_names list."""
+        sensors = self.get_remote_sensors(index)
         sensor_list = []
-        for name in sensor_names:
-            """Find the sensor id from the name."""
-            sensors = self.get_remote_sensors(index)
-            for sensor in sensors:
-                if sensor["name"] == name:
-                    sensor_list.append(
-                        {"id": "{}:1".format(sensor["id"]), "name": name})
+
+        if sensor_ids:
+            """Update climate sensors with sensor_ids list."""
+            for id in sensor_ids:
+                for sensor in sensors:
+                    if sensor["id"] == id:
+                        sensor_list.append(
+                            {"id": "{}:1".format(id), "name": sensor["name"]})
+
+        if sensor_names:
+            """Update climate sensors with sensor_names list."""
+            for name in sensor_names:
+                """Find the sensor id from the name."""
+                for sensor in sensors:
+                    if sensor["name"] == name:
+                        sensor_list.append(
+                            {"id": "{}:1".format(sensor["id"]), "name": name})
+
+        if len(sensor_list) == 0:
+            raise InvalidSensorError("no sensor matching provided ids or names on thermostat")
+
         try:
             programs["climates"][climate_index]["sensors"] = sensor_list
         except UnboundLocalError:

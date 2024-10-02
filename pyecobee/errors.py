@@ -15,3 +15,6 @@ class ExpiredTokenError(EcobeeError):
 
 class InvalidTokenError(EcobeeError):
     """Raised when ecobee API returns a code indicating invalid credentials."""
+
+class InvalidSensorError(EcobeeError):
+    """Raised when remote sensor not present on thermostat."""

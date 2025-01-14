@@ -15,18 +15,20 @@ from .const import (
     ECOBEE_ACCESS_TOKEN,
     ECOBEE_API_KEY,
     ECOBEE_API_VERSION,
+    ECOBEE_AUTH0_TOKEN,
+    ECOBEE_AUTH_BASE_URL,
     ECOBEE_AUTHORIZATION_CODE,
     ECOBEE_BASE_URL,
-    ECOBEE_AUTH_BASE_URL,
     ECOBEE_CONFIG_FILENAME,
     ECOBEE_DEFAULT_TIMEOUT,
     ECOBEE_ENDPOINT_AUTH,
     ECOBEE_ENDPOINT_THERMOSTAT,
     ECOBEE_ENDPOINT_TOKEN,
-    ECOBEE_REFRESH_TOKEN,
-    ECOBEE_AUTH0_TOKEN,
     ECOBEE_OPTIONS_NOTIFICATIONS,
-    ECOBEE_WEB_CLIENT_ID
+    ECOBEE_PASSWORD,
+    ECOBEE_REFRESH_TOKEN,
+    ECOBEE_USERNAME,
+    ECOBEE_WEB_CLIENT_ID,
 )
 from .errors import ExpiredTokenError, InvalidSensorError, InvalidTokenError
 from .util import config_from_file, convert_to_bool
@@ -44,6 +46,8 @@ class Ecobee(object):
         self.authorization_code = None
         self.access_token = None
         self.refresh_token = None
+        self.username = None
+        self.password = None
         self.auth0_token = None
         self.include_notifications = False
 
@@ -53,13 +57,17 @@ class Ecobee(object):
 
         if self.config:
             self._file_based_config = False
-            self.api_key = self.config[ECOBEE_API_KEY]
+            self.api_key = self.config.get(ECOBEE_API_KEY)
             if ECOBEE_ACCESS_TOKEN in self.config:
                 self.access_token = self.config[ECOBEE_ACCESS_TOKEN]
             if ECOBEE_AUTHORIZATION_CODE in self.config:
                 self.authorization_code = self.config[ECOBEE_AUTHORIZATION_CODE]
             if ECOBEE_REFRESH_TOKEN in self.config:
                 self.refresh_token = self.config[ECOBEE_REFRESH_TOKEN]
+            if ECOBEE_USERNAME in self.config:
+                self.username = self.config[ECOBEE_USERNAME]
+            if ECOBEE_PASSWORD in self.config:
+                self.password = self.config[ECOBEE_PASSWORD]
             if ECOBEE_AUTH0_TOKEN in self.config:
                 self.auth0_token = self.config[ECOBEE_AUTH0_TOKEN]
             if ECOBEE_OPTIONS_NOTIFICATIONS in self.config:
@@ -78,6 +86,10 @@ class Ecobee(object):
                 self.authorization_code = self.config[ECOBEE_AUTHORIZATION_CODE]
             if ECOBEE_REFRESH_TOKEN in self.config:
                 self.refresh_token = self.config[ECOBEE_REFRESH_TOKEN]
+            if ECOBEE_USERNAME in self.config:
+                self.username = self.config[ECOBEE_USERNAME]
+            if ECOBEE_PASSWORD in self.config:
+                self.password = self.config[ECOBEE_PASSWORD]
             if ECOBEE_AUTH0_TOKEN in self.config:
                 self.auth0_token = self.config[ECOBEE_AUTH0_TOKEN]
             if ECOBEE_OPTIONS_NOTIFICATIONS in self.config:
@@ -89,6 +101,8 @@ class Ecobee(object):
         config[ECOBEE_API_KEY] = self.api_key
         config[ECOBEE_ACCESS_TOKEN] = self.access_token
         config[ECOBEE_REFRESH_TOKEN] = self.refresh_token
+        config[ECOBEE_USERNAME] = self.username
+        config[ECOBEE_PASSWORD] = self.password
         config[ECOBEE_AUTH0_TOKEN] = self.auth0_token
         config[ECOBEE_AUTHORIZATION_CODE] = self.authorization_code
         config[ECOBEE_OPTIONS_NOTIFICATIONS] = str(self.include_notifications)
@@ -199,6 +213,9 @@ class Ecobee(object):
         return True
 
     def refresh_tokens(self) -> bool:
+        if self.username and self.password:
+            self.request_auth0_token()
+
         if self.auth0_token is not None:
             return self.request_tokens_web()
         
@@ -228,6 +245,46 @@ class Ecobee(object):
         except (KeyError, TypeError) as err:
             _LOGGER.debug(f"Error refreshing tokens from ecobee: {err}")
             return False
+
+    def request_auth0_token(self) -> bool:
+        """Get the auth0 token via username/password."""
+        session = requests.Session()
+        url = f"{ECOBEE_AUTH_BASE_URL}/{ECOBEE_ENDPOINT_AUTH}"
+        resp = session.get(
+            url,
+            params = {
+                "response_type": "token",
+                "response_mode": "form_post",
+                "client_id": ECOBEE_WEB_CLIENT_ID,
+                "redirect_uri": "https://www.ecobee.com/home/authCallback",
+                "audience": "https://prod.ecobee.com/api/v1",
+                "scope": "openid smartWrite piiWrite piiRead smartRead deleteGrants",
+            }
+        )
+        if resp.status_code != 200:
+            _LOGGER.error(f"Failed to obtain auth0 token from {url}: {resp.status_code} {resp.text}")
+            return False
+
+        redirect_url = resp.url
+        resp = session.post(
+            redirect_url,
+            data={
+                "username": self.username,
+                "password": self.password,
+                "action": "default"
+            }
+        )
+        if resp.status_code != 200:
+            _LOGGER.error(f"Failed to obtain auth0 token from {redirect_url}: {resp.status_code} {resp.text}")
+            return False
+        if (auth0 := resp.cookies.get("auth0")) is None:
+            _LOGGER.error("Failed to obtain auth0 token from {redirect_url}: no auth0 cookie in response")
+            self.auth0_token = None
+            return False
+
+        _LOGGER.debug(f"Obtained auth0 token: {auth0}")
+        self.auth0_token = auth0
+        return True
 
     def get_thermostats(self) -> bool:
         """Gets a json-list of thermostats from ecobee and caches in self.thermostats."""

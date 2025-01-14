@@ -278,7 +278,7 @@ class Ecobee(object):
             _LOGGER.error(f"Failed to obtain auth0 token from {redirect_url}: {resp.status_code} {resp.text}")
             return False
         if (auth0 := resp.cookies.get("auth0")) is None:
-            _LOGGER.error("Failed to obtain auth0 token from {redirect_url}: no auth0 cookie in response")
+            _LOGGER.error(f"Failed to obtain auth0 token from {redirect_url}: no auth0 cookie in response")
             self.auth0_token = None
             return False
 

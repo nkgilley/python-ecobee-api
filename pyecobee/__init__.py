@@ -835,6 +835,25 @@ class Ecobee(object):
         except (ExpiredTokenError, InvalidTokenError) as err:
             raise err
 
+    def set_aux_maxtemp_threshold(self, index: int, threshold: int) -> None:
+        """Set the threshold for outdoor temp above which alt heat will not be used."""
+        body = {
+            "selection": {
+                "selectionType": "thermostats",
+                "selectionMatch": self.thermostats[index]["identifier"],
+            },
+            "thermostat": {"settings": {"auxMaxOutdoorTemp": int(threshold * 10)}},
+        }
+        log_msg_action = "set max outdoor temp threshold for aux"
+
+        try:
+            self._request_with_refresh(
+                "POST", ECOBEE_ENDPOINT_THERMOSTAT, log_msg_action, body=body
+            )
+        except (ExpiredTokenError, InvalidTokenError) as err:
+            raise err
+
+    
     def update_climate_sensors(self, index: int, climate_name: str, sensor_names: Optional[list]=None, sensor_ids: Optional[list]=None) -> None:
         """Get current climate program. Must provide either `sensor_names` or `ids`."""
         # Ensure only either `sensor_names` or `ids` was provided.

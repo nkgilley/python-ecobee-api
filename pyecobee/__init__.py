@@ -1,5 +1,10 @@
 """ Python Code for Communication with the Ecobee Thermostat """
+import base64
 import datetime
+import hashlib
+import re
+import secrets
+from dataclasses import dataclass, field
 from typing import Optional
 
 import requests
@@ -30,8 +35,77 @@ from .const import (
     ECOBEE_USERNAME,
     ECOBEE_WEB_CLIENT_ID,
 )
-from .errors import ExpiredTokenError, InvalidSensorError, InvalidTokenError
+from .errors import (
+    EcobeeAuthFailedError,
+    EcobeeAuthMfaRequiredError,
+    EcobeeAuthUnknownError,
+    ExpiredTokenError,
+    InvalidSensorError,
+    InvalidTokenError,
+)
 from .util import config_from_file, convert_to_bool
+
+ECOBEE_REDIRECT_URI = "https://www.ecobee.com/home/authCallback"
+ECOBEE_AUDIENCE = "https://prod.ecobee.com/api/v1"
+ECOBEE_WEB_SCOPE = (
+    "openid offline_access smartWrite piiWrite piiRead smartRead deleteGrants"
+)
+ECOBEE_OAUTH_TOKEN_URL = f"{ECOBEE_AUTH_BASE_URL}/oauth/token"
+ECOBEE_MFA_OTP_CHALLENGE_PATH = "/u/mfa-otp-challenge"
+
+
+def _state_from_url(url: str) -> str:
+    """Extract the ``state`` query parameter from an Auth0 step URL."""
+    match = re.search(r"[?&]state=([^&]+)", url)
+    return match.group(1) if match else ""
+
+
+def _code_from_url(url: str) -> Optional[str]:
+    """Extract the authorization ``code`` query parameter from a callback URL."""
+    match = re.search(r"[?&]code=([^&]+)", url)
+    return match.group(1) if match else None
+
+
+def _final_url(resp: "requests.Response") -> str:
+    """Return the URL of the last hop, even when redirects were not followed.
+
+    If the response itself is a 3xx (no further follow), return the absolute
+    URL its ``Location`` header points to. Otherwise the ``resp.url`` is
+    already the landed URL.
+    """
+    if resp.is_redirect or resp.is_permanent_redirect:
+        return requests.compat.urljoin(resp.url, resp.headers.get("Location", ""))
+    return resp.url
+
+
+def _generate_pkce_pair() -> tuple[str, str]:
+    """Return ``(verifier, challenge)`` for OAuth2 PKCE.
+
+    The verifier is a URL-safe random string (RFC 7636 §4.1 requires 43-128
+    chars). The challenge is the base64url-encoded SHA-256 of the verifier
+    with padding stripped, suitable for ``code_challenge_method=S256``.
+    """
+    verifier = secrets.token_urlsafe(64)  # ~86 chars, within 43-128
+    digest = hashlib.sha256(verifier.encode("ascii")).digest()
+    challenge = base64.urlsafe_b64encode(digest).rstrip(b"=").decode("ascii")
+    return verifier, challenge
+
+
+@dataclass
+class MfaChallenge:
+    """Opaque resumption state for an in-progress MFA-gated login.
+
+    Returned (via :class:`EcobeeAuthMfaRequiredError`) when ecobee Auth0
+    interrupts the login flow with an MFA challenge. Pass this back into
+    :meth:`Ecobee.submit_mfa_code` along with the user-entered code to
+    complete the login and obtain tokens.
+    """
+
+    challenge_url: str
+    state: str
+    mfa_type: str
+    cookies: dict = field(default_factory=dict)
+    code_verifier: str = ""
 
 
 class Ecobee(object):
@@ -175,110 +249,332 @@ class Ecobee(object):
             return False
 
     def request_tokens_web(self) -> bool:
-        # Keep all cookies in a session
+        """Log in via the ecobee web flow and obtain access + refresh tokens.
+
+        Uses OAuth2 authorization code flow with PKCE plus the ``offline_access``
+        scope so the response includes a refresh_token. Subsequent refreshes
+        go through :meth:`_refresh_with_refresh_token` without re-submitting
+        credentials.
+
+        Returns True on success. On any failure raises one of:
+
+        * :class:`EcobeeAuthMfaRequiredError` — ecobee Auth0 demanded an MFA
+          OTP. The error carries an :class:`MfaChallenge` resumption payload.
+          Pass it (plus the OTP code) to :meth:`submit_mfa_code` to finish.
+        * :class:`EcobeeAuthFailedError` — credentials were rejected.
+        * :class:`EcobeeAuthUnknownError` — HTTP/transport error or an
+          unexpected response shape from Auth0.
+        """
+        verifier, challenge = _generate_pkce_pair()
         session = requests.Session()
 
-        # Get the auth0 token and redirect to the identifier step of the login flow
-        auth0_url = f"{ECOBEE_AUTH_BASE_URL}/{ECOBEE_ENDPOINT_AUTH}"
-        resp = session.get(
-            auth0_url,
-            params={
-                "response_type": "token",
-                "response_mode": "form_post",
-                "client_id": ECOBEE_WEB_CLIENT_ID,
-                "redirect_uri": "https://www.ecobee.com/home/authCallback",
-                "audience": "https://prod.ecobee.com/api/v1",
-                "scope": "openid smartWrite piiWrite piiRead smartRead deleteGrants",
-            },
-        )
-        if "auth0" not in session.cookies:
-            _LOGGER.error(
-                f"Failed to obtain auth0 token from {auth0_url}: {resp.status_code} {resp.text}"
+        try:
+            resp = session.get(
+                f"{ECOBEE_AUTH_BASE_URL}/{ECOBEE_ENDPOINT_AUTH}",
+                params={
+                    "response_type": "code",
+                    "client_id": ECOBEE_WEB_CLIENT_ID,
+                    "redirect_uri": ECOBEE_REDIRECT_URI,
+                    "audience": ECOBEE_AUDIENCE,
+                    "scope": ECOBEE_WEB_SCOPE,
+                    "code_challenge": challenge,
+                    "code_challenge_method": "S256",
+                },
+                timeout=ECOBEE_DEFAULT_TIMEOUT,
             )
-            return False
-        else:
-            self.auth0_token = session.cookies["auth0"]
+            resp.raise_for_status()
+        except RequestException as err:
+            raise EcobeeAuthUnknownError(
+                f"Failed to start ecobee Auth0 login: {err}"
+            ) from err
 
-        # Submit the identifier/username and redirect to the password step
+        if "/u/login/identifier" not in resp.url:
+            raise EcobeeAuthUnknownError(
+                f"ecobee Auth0 did not redirect to the identifier step "
+                f"(landed at {resp.url}); login URL may have changed."
+            )
+
+        # Auth0 Universal Login: identifier-first, then password.
         identifier_url = resp.url
-        resp = session.post(
-            identifier_url,
-            data={
-                "username": self.username,
-            },
-        )
-        if resp.status_code != 200:
-            _LOGGER.error(f"Failed to submit username: {resp.status_code} {resp.text}")
-            return False
+        try:
+            resp = session.post(
+                identifier_url,
+                data={"state": _state_from_url(identifier_url), "username": self.username},
+                timeout=ECOBEE_DEFAULT_TIMEOUT,
+            )
+            resp.raise_for_status()
+        except RequestException as err:
+            raise EcobeeAuthUnknownError(f"Failed to submit username: {err}") from err
 
-        # Submit the password and get the access_token
+        if "/u/login/password" not in resp.url:
+            raise EcobeeAuthFailedError(
+                f"ecobee did not accept the username (landed at {resp.url})"
+            )
+
         password_url = resp.url
-        resp = session.post(
-            password_url,
-            data={
-                "username": self.username,
-                "password": self.password,
-            },
+        try:
+            # Don't follow the final redirect into authCallback — we want to
+            # read the ``code`` out of the Location header, not actually load
+            # the external ecobee.com page.
+            resp = session.post(
+                password_url,
+                data={
+                    "state": _state_from_url(password_url),
+                    "username": self.username,
+                    "password": self.password,
+                },
+                allow_redirects=False,
+                timeout=ECOBEE_DEFAULT_TIMEOUT,
+            )
+        except RequestException as err:
+            raise EcobeeAuthUnknownError(f"Failed to submit password: {err}") from err
+
+        # The password POST is expected to be a 302. Resolve the next URL by
+        # following Auth0's redirects (which may bounce through /authorize/resume
+        # and then either to /u/mfa-otp-challenge or to the authCallback).
+        landed_url = self._resolve_post_login_redirect(session, resp)
+        self._handle_post_password_response(landed_url, verifier, session)
+        return self._exchange_code_for_tokens(_code_from_url(landed_url), verifier)
+
+    def _resolve_post_login_redirect(
+        self, session: "requests.Session", resp: "requests.Response"
+    ) -> str:
+        """Walk Auth0's post-login redirect chain to its terminal URL.
+
+        After a successful password POST, Auth0 typically responds 302 →
+        /authorize/resume → 302 → either /u/mfa-otp-challenge (MFA) or
+        /home/authCallback?code=... (no MFA). We follow within the
+        auth.ecobee.com domain but stop at the moment we leave it, so the
+        external callback URL is read out of the Location header rather than
+        actually requested.
+        """
+        for _ in range(10):
+            if not (resp.is_redirect or resp.is_permanent_redirect):
+                return resp.url
+            next_url = requests.compat.urljoin(
+                resp.url, resp.headers.get("Location", "")
+            )
+            if not next_url.startswith(ECOBEE_AUTH_BASE_URL):
+                # About to leave auth.ecobee.com — return that URL without
+                # actually fetching it. This is where the authCallback lives.
+                return next_url
+            try:
+                resp = session.get(
+                    next_url,
+                    allow_redirects=False,
+                    timeout=ECOBEE_DEFAULT_TIMEOUT,
+                )
+            except RequestException as err:
+                raise EcobeeAuthUnknownError(
+                    f"Failed while following Auth0 redirect to {next_url}: {err}"
+                ) from err
+        raise EcobeeAuthUnknownError(
+            "Auth0 redirect chain exceeded 10 hops; aborting."
         )
-        if resp.status_code != 200:
-            _LOGGER.error(f"Failed to submit password: {resp.status_code} {resp.text}")
-            return False
 
-        if (
-            access_token := resp.text.split('name="access_token" value="')[1].split(
-                '"'
-            )[0]
-        ) is None:
-            _LOGGER.error("Failed to refresh bearer token: no access token in response")
-            return False
+    def submit_mfa_code(self, challenge: MfaChallenge, code: str) -> bool:
+        """Complete an MFA-gated login by submitting the user's OTP code.
 
-        self.access_token = access_token
+        ``challenge`` must be the payload carried by the
+        :class:`EcobeeAuthMfaRequiredError` raised earlier by
+        :meth:`request_tokens_web`. Returns True on success, raises
+        :class:`EcobeeAuthFailedError` for a rejected code, or
+        :class:`EcobeeAuthUnknownError` for any other problem.
+        """
+        session = requests.Session()
+        for name, value in challenge.cookies.items():
+            session.cookies.set(name, value)
 
-        if (
-            expires_in := resp.text.split('name="expires_in" value="')[1].split('"')[0]
-        ) is None:
-            _LOGGER.error("Failed to refresh bearer token: no expiration in response")
-            return False
+        try:
+            resp = session.post(
+                challenge.challenge_url,
+                data={"state": challenge.state, "code": code},
+                allow_redirects=False,
+                timeout=ECOBEE_DEFAULT_TIMEOUT,
+            )
+        except RequestException as err:
+            raise EcobeeAuthUnknownError(f"Failed to submit OTP code: {err}") from err
 
-        expires_at = datetime.datetime.now() + datetime.timedelta(
-            seconds=int(expires_in)
-        )
-        _LOGGER.debug(f"Access token expires at {expires_at}")
+        landed_url = self._resolve_post_login_redirect(session, resp)
+        # On a rejected OTP, Auth0 redirects back to the same challenge URL.
+        if ECOBEE_MFA_OTP_CHALLENGE_PATH in landed_url:
+            raise EcobeeAuthFailedError("The MFA code was not accepted by ecobee.")
+
+        code_value = _code_from_url(landed_url)
+        if not code_value:
+            raise EcobeeAuthUnknownError(
+                f"Unexpected response after MFA submission (landed at {landed_url})"
+            )
+        return self._exchange_code_for_tokens(code_value, challenge.code_verifier)
+
+    def _handle_post_password_response(
+        self,
+        landed_url: str,
+        verifier: str,
+        session: "requests.Session",
+    ) -> None:
+        """Branch on the URL Auth0 ultimately redirects to after the password POST.
+
+        Raises an appropriate ``EcobeeAuthError`` subclass unless ``landed_url``
+        contains an auth code (in which case the caller is expected to
+        exchange it).
+        """
+        if ECOBEE_MFA_OTP_CHALLENGE_PATH in landed_url:
+            raise EcobeeAuthMfaRequiredError(
+                MfaChallenge(
+                    challenge_url=landed_url,
+                    state=_state_from_url(landed_url),
+                    mfa_type="otp",
+                    cookies=session.cookies.get_dict(),
+                    code_verifier=verifier,
+                )
+            )
+        if "/u/mfa-" in landed_url:
+            # Other MFA challenge types (push/sms/email) — unsupported for now.
+            raise EcobeeAuthUnknownError(
+                f"ecobee account requires an MFA type that is not yet "
+                f"supported by this library (challenge URL: {landed_url}). "
+                f"TOTP via an authenticator app is supported."
+            )
+        if "/u/login/password" in landed_url:
+            raise EcobeeAuthFailedError(
+                "ecobee rejected the supplied password."
+            )
+        if _code_from_url(landed_url) is None:
+            raise EcobeeAuthUnknownError(
+                f"Unexpected response after login (landed at {landed_url})"
+            )
+
+    def _exchange_code_for_tokens(self, code: str, verifier: str) -> bool:
+        """Exchange an authorization code for access + refresh tokens."""
+        try:
+            resp = requests.post(
+                ECOBEE_OAUTH_TOKEN_URL,
+                data={
+                    "grant_type": "authorization_code",
+                    "code": code,
+                    "code_verifier": verifier,
+                    "client_id": ECOBEE_WEB_CLIENT_ID,
+                    "redirect_uri": ECOBEE_REDIRECT_URI,
+                },
+                timeout=ECOBEE_DEFAULT_TIMEOUT,
+            )
+            resp.raise_for_status()
+            payload = resp.json()
+        except (RequestException, ValueError) as err:
+            raise EcobeeAuthUnknownError(
+                f"Failed to exchange authorization code for tokens: {err}"
+            ) from err
+
+        try:
+            self.access_token = payload["access_token"]
+        except KeyError as err:
+            raise EcobeeAuthUnknownError(
+                f"Token exchange response missing access_token: {payload}"
+            ) from err
+        # refresh_token only present when offline_access was granted; absence
+        # makes the integration unusable past the first hour, so treat as fatal.
+        try:
+            self.refresh_token = payload["refresh_token"]
+        except KeyError as err:
+            raise EcobeeAuthUnknownError(
+                "Token exchange response did not include a refresh_token. "
+                "The Auth0 client_id may not have offline_access enabled."
+            ) from err
+
+        if "expires_in" in payload:
+            expires_at = datetime.datetime.now() + datetime.timedelta(
+                seconds=int(payload["expires_in"])
+            )
+            _LOGGER.debug(f"Access token expires at {expires_at}")
 
         self._write_config()
+        return True
 
+    def _refresh_with_refresh_token(self) -> bool:
+        """Refresh the access token via the OAuth2 refresh_token grant.
+
+        Uses ``auth.ecobee.com/oauth/token`` (the Auth0 endpoint used by the
+        web flow), not ``api.ecobee.com/token`` (the PIN-flow endpoint). Stores
+        any rotated refresh_token returned by Auth0.
+        """
+        try:
+            resp = requests.post(
+                ECOBEE_OAUTH_TOKEN_URL,
+                data={
+                    "grant_type": "refresh_token",
+                    "refresh_token": self.refresh_token,
+                    "client_id": ECOBEE_WEB_CLIENT_ID,
+                },
+                timeout=ECOBEE_DEFAULT_TIMEOUT,
+            )
+            resp.raise_for_status()
+            payload = resp.json()
+        except (RequestException, ValueError) as err:
+            raise EcobeeAuthUnknownError(
+                f"Failed to refresh ecobee tokens: {err}"
+            ) from err
+
+        try:
+            self.access_token = payload["access_token"]
+        except KeyError as err:
+            raise EcobeeAuthUnknownError(
+                f"Refresh response missing access_token: {payload}"
+            ) from err
+        # Auth0 may or may not rotate the refresh_token. Persist the new value
+        # if returned; keep the old one otherwise.
+        if "refresh_token" in payload:
+            self.refresh_token = payload["refresh_token"]
+
+        self._write_config()
         return True
 
     def refresh_tokens(self) -> bool:
+        """Refresh the access token.
+
+        Three paths, in priority order:
+
+        1. **PIN flow** (``api_key`` set): use the legacy ``api.ecobee.com/token``
+           endpoint with the stored refresh_token. PIN-flow refresh tokens are
+           tied to the developer API key and only work against that endpoint.
+        2. **Web flow with refresh_token**: use the OAuth2 refresh grant
+           against ``auth.ecobee.com/oauth/token``. No re-prompting for
+           credentials or MFA — this is the steady state after initial setup.
+        3. **Web flow with credentials but no refresh_token**: do a full web
+           login. Covers initial authentication and migrations from older
+           entries that pre-date refresh_token storage.
+        """
+        if self.api_key:
+            params = {
+                "grant_type": "refresh_token",
+                "refresh_token": self.refresh_token,
+                "client_id": self.api_key,
+            }
+            response = self._request(
+                "POST",
+                ECOBEE_ENDPOINT_TOKEN,
+                "refresh tokens",
+                params=params,
+                auth_request=True,
+            )
+            try:
+                self.access_token = response["access_token"]
+                self.refresh_token = response["refresh_token"]
+                self._write_config()
+                return True
+            except (KeyError, TypeError) as err:
+                _LOGGER.debug(f"Error refreshing tokens from ecobee: {err}")
+                return False
+
+        if self.refresh_token:
+            return self._refresh_with_refresh_token()
+
         if self.username and self.password:
             return self.request_tokens_web()
-        
-        """Refreshes ecobee API tokens."""
-        params = {
-            "grant_type": "refresh_token",
-            "refresh_token": self.refresh_token,
-            "client_id": self.api_key,
-        }
-        log_msg_action = "refresh tokens"
 
-        response = self._request(
-            "POST",
-            ECOBEE_ENDPOINT_TOKEN,
-            log_msg_action,
-            params=params,
-            auth_request=True,
+        raise EcobeeAuthUnknownError(
+            "No refresh_token, credentials, or API key available to refresh."
         )
-
-        try:
-            self.access_token = response["access_token"]
-            self.refresh_token = response["refresh_token"]
-            self._write_config()
-            _LOGGER.debug(f"Refreshed tokens from ecobee: access {self.access_token}, "
-                          f"refresh {self.refresh_token}")
-            return True
-        except (KeyError, TypeError) as err:
-            _LOGGER.debug(f"Error refreshing tokens from ecobee: {err}")
-            return False
 
     def get_thermostats(self) -> bool:
         """Gets a json-list of thermostats from ecobee and caches in self.thermostats."""

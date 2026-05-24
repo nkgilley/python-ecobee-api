@@ -435,3 +435,22 @@ def test_refresh_tokens_falls_back_to_web_login_for_legacy_entries(
     ecobee = _make_ecobee()  # no refresh_token
     assert ecobee.refresh_tokens() is True
     assert ecobee.refresh_token == "RT-m"
+
+
+def test_refresh_tokens_invalid_grant_raises_invalid_token(
+    requests_mock: rm_module.Mocker,
+) -> None:
+    """If the refresh token grant fails with invalid_grant, raise InvalidTokenError."""
+    from pyecobee.errors import InvalidTokenError
+
+    requests_mock.post(
+        TOKEN_URL,
+        status_code=400,
+        json={"error": "invalid_grant", "error_description": "Unknown or invalid refresh token."},
+    )
+
+    ecobee = _make_ecobee()
+    ecobee.refresh_token = "RT-expired"
+    with pytest.raises(InvalidTokenError):
+        ecobee.refresh_tokens()
+

@@ -511,6 +511,19 @@ class Ecobee(object):
             resp.raise_for_status()
             payload = resp.json()
         except (RequestException, ValueError) as err:
+            if (
+                isinstance(err, RequestException)
+                and err.response is not None
+                and err.response.status_code == 400
+            ):
+                try:
+                    payload = err.response.json()
+                except ValueError:
+                    payload = {}
+                if payload.get("error") == "invalid_grant":
+                    raise InvalidTokenError(
+                        "ecobee tokens invalid; re-authentication required"
+                    ) from err
             raise EcobeeAuthUnknownError(
                 f"Failed to refresh ecobee tokens: {err}"
             ) from err

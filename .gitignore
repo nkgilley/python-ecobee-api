@@ -4,3 +4,7 @@
 lib
 bin
 pyvenv.cfg
+.ecobee.local.conf
+.venv/
+*.egg-info/
+__pycache__/

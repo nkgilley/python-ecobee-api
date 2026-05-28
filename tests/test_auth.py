@@ -217,23 +217,49 @@ def test_request_tokens_web_mfa_required_raises_with_challenge(
     assert challenge.code_verifier  # PKCE verifier preserved for resumption
 
 
-def test_request_tokens_web_unsupported_mfa_type_raises_unknown(
+def test_request_tokens_web_sms_mfa_required_raises_with_challenge(
     requests_mock: rm_module.Mocker,
 ) -> None:
-    """SMS/push/email challenge URLs aren't supported in v1; surface clearly."""
+    """SMS-MFA accounts get a typed exception carrying the resumption state."""
     _register_initial_get(requests_mock)
     _register_identifier_post(requests_mock)
     requests_mock.post(
         f"{AUTH_BASE}/u/login/password",
         status_code=302,
-        headers={
-            "Location": f"{AUTH_BASE}/u/mfa-sms-challenge?state=SMS_STATE"
-        },
+        headers={"Location": f"{AUTH_BASE}/u/mfa-sms-challenge?state=SMS_STATE_7"},
     )
     requests_mock.get(
         f"{AUTH_BASE}/u/mfa-sms-challenge",
         status_code=200,
         text="<html>SMS form</html>",
+    )
+
+    ecobee = _make_ecobee()
+    with pytest.raises(EcobeeAuthMfaRequiredError) as exc_info:
+        ecobee.request_tokens_web()
+    challenge = exc_info.value.args[0]
+    assert isinstance(challenge, MfaChallenge)
+    assert challenge.mfa_type == "sms"
+    assert challenge.state == "SMS_STATE_7"
+    assert "mfa-sms-challenge" in challenge.challenge_url
+    assert challenge.code_verifier
+
+
+def test_request_tokens_web_unsupported_mfa_type_raises_unknown(
+    requests_mock: rm_module.Mocker,
+) -> None:
+    """Push/email challenge URLs aren't yet supported; surface clearly."""
+    _register_initial_get(requests_mock)
+    _register_identifier_post(requests_mock)
+    requests_mock.post(
+        f"{AUTH_BASE}/u/login/password",
+        status_code=302,
+        headers={"Location": f"{AUTH_BASE}/u/mfa-push-challenge?state=PUSH_STATE"},
+    )
+    requests_mock.get(
+        f"{AUTH_BASE}/u/mfa-push-challenge",
+        status_code=200,
+        text="<html>push form</html>",
     )
 
     ecobee = _make_ecobee()
@@ -352,6 +378,58 @@ def test_submit_mfa_code_wrong_code_raises_failed(
         challenge_url=challenge_url,
         state="MFA_STATE",
         mfa_type="otp",
+        code_verifier="V",
+    )
+    ecobee = _make_ecobee()
+    with pytest.raises(EcobeeAuthFailedError, match="not accepted"):
+        ecobee.submit_mfa_code(challenge, "000000")
+
+
+def test_submit_mfa_code_sms_success(requests_mock: rm_module.Mocker) -> None:
+    """Submitting a valid SMS code completes the login and stores both tokens."""
+    challenge_url = f"{AUTH_BASE}/u/mfa-sms-challenge?state=SMS_STATE"
+    requests_mock.post(
+        challenge_url,
+        status_code=302,
+        headers={"Location": f"{CALLBACK_URL}?code=POST_SMS_CODE"},
+    )
+    requests_mock.post(
+        TOKEN_URL,
+        status_code=200,
+        json={"access_token": "AT-sms", "refresh_token": "RT-sms", "expires_in": 3600},
+    )
+
+    challenge = MfaChallenge(
+        challenge_url=challenge_url,
+        state="SMS_STATE",
+        mfa_type="sms",
+        cookies={"auth0": "sess"},
+        code_verifier="VERIFIER_SMS",
+    )
+    ecobee = _make_ecobee()
+    assert ecobee.submit_mfa_code(challenge, "355777") is True
+    assert ecobee.access_token == "AT-sms"
+    assert ecobee.refresh_token == "RT-sms"
+
+    sms_call = next(
+        c for c in requests_mock.request_history if "mfa-sms-challenge" in c.url and c.method == "POST"
+    )
+    body = parse_qs(sms_call.text)
+    assert body["state"] == ["SMS_STATE"]
+    assert body["code"] == ["355777"]
+
+
+def test_submit_mfa_code_sms_wrong_code_raises_failed(
+    requests_mock: rm_module.Mocker,
+) -> None:
+    """Auth0 returns 400 for a bad SMS code; map to AuthFailed."""
+    challenge_url = f"{AUTH_BASE}/u/mfa-sms-challenge?state=SMS_STATE"
+    requests_mock.post(challenge_url, status_code=400)
+
+    challenge = MfaChallenge(
+        challenge_url=challenge_url,
+        state="SMS_STATE",
+        mfa_type="sms",
         code_verifier="V",
     )
     ecobee = _make_ecobee()

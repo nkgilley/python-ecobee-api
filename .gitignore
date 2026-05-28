@@ -8,3 +8,6 @@ pyvenv.cfg
 .venv/
 *.egg-info/
 __pycache__/
+*.har
+NOTES_auth_flow.md
+extensions-*.md

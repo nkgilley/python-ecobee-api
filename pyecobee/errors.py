@@ -4,32 +4,23 @@
 class EcobeeError(Exception):
     """Base class for all ecobee exceptions."""
 
-    pass
 
-
+# Token / credential errors
 class ExpiredTokenError(EcobeeError):
     """Raised when ecobee API returns a code indicating expired credentials."""
-
-    pass
 
 
 class InvalidTokenError(EcobeeError):
     """Raised when ecobee API returns a code indicating invalid credentials."""
 
-class InvalidSensorError(EcobeeError):
-    """Raised when remote sensor not present on thermostat."""
 
-
+# Auth0 login errors
 class EcobeeAuthFailedError(EcobeeError):
     """Raised when ecobee Auth0 rejects the supplied credentials or OTP code."""
-
-    pass
 
 
 class EcobeeAuthUnknownError(EcobeeError):
     """Raised when ecobee Auth0 returns an unexpected response shape."""
-
-    pass
 
 
 class EcobeeAuthMfaRequiredError(EcobeeError):
@@ -40,4 +31,7 @@ class EcobeeAuthMfaRequiredError(EcobeeError):
     user-entered OTP code to resume the login flow.
     """
 
-    pass
+
+# Sensor errors
+class InvalidSensorError(EcobeeError):
+    """Raised when remote sensor not present on thermostat."""

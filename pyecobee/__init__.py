@@ -20,6 +20,7 @@ from .const import (
     ECOBEE_ACCESS_TOKEN,
     ECOBEE_API_KEY,
     ECOBEE_API_VERSION,
+    ECOBEE_AUDIENCE,
     ECOBEE_AUTH0_TOKEN,
     ECOBEE_AUTH_BASE_URL,
     ECOBEE_AUTHORIZATION_CODE,
@@ -29,11 +30,16 @@ from .const import (
     ECOBEE_ENDPOINT_AUTH,
     ECOBEE_ENDPOINT_THERMOSTAT,
     ECOBEE_ENDPOINT_TOKEN,
+    ECOBEE_MFA_OTP_CHALLENGE_PATH,
+    ECOBEE_MFA_SMS_CHALLENGE_PATH,
+    ECOBEE_OAUTH_TOKEN_URL,
     ECOBEE_OPTIONS_NOTIFICATIONS,
     ECOBEE_PASSWORD,
+    ECOBEE_REDIRECT_URI,
     ECOBEE_REFRESH_TOKEN,
     ECOBEE_USERNAME,
     ECOBEE_WEB_CLIENT_ID,
+    ECOBEE_WEB_SCOPE,
 )
 from .errors import (
     EcobeeAuthFailedError,
@@ -44,15 +50,6 @@ from .errors import (
     InvalidTokenError,
 )
 from .util import config_from_file, convert_to_bool
-
-ECOBEE_REDIRECT_URI = "https://www.ecobee.com/home/authCallback"
-ECOBEE_AUDIENCE = "https://prod.ecobee.com/api/v1"
-ECOBEE_WEB_SCOPE = (
-    "openid offline_access smartWrite piiWrite piiRead smartRead deleteGrants"
-)
-ECOBEE_OAUTH_TOKEN_URL = f"{ECOBEE_AUTH_BASE_URL}/oauth/token"
-ECOBEE_MFA_OTP_CHALLENGE_PATH = "/u/mfa-otp-challenge"
-ECOBEE_MFA_SMS_CHALLENGE_PATH = "/u/mfa-sms-challenge"
 
 
 def _state_from_url(url: str) -> str:

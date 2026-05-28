@@ -45,6 +45,18 @@ def main() -> int:
             "otp": "Enter the 6-digit code from your authenticator app",
             "sms": "Enter the code sent to your phone via SMS",
         }.get(challenge.mfa_type, f"Enter the {challenge.mfa_type} MFA code")
+
+        print("  Gate: submitting wrong code '000000' — should raise EcobeeAuthFailedError...")
+        try:
+            ecobee.submit_mfa_code(challenge, "000000")
+            print("  GATING FAILURE: wrong code was accepted. Stop.")
+            return 5
+        except EcobeeAuthFailedError:
+            print("  PASS: wrong code correctly rejected.")
+        except EcobeeAuthUnknownError as e:
+            print(f"  GATING FAILURE: wrong code raised UnknownError instead of FailedError: {e}")
+            return 5
+
         otp = input(f"  {prompt}: ").strip()
         try:
             ecobee.submit_mfa_code(challenge, otp)

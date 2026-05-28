@@ -52,6 +52,7 @@ ECOBEE_WEB_SCOPE = (
 )
 ECOBEE_OAUTH_TOKEN_URL = f"{ECOBEE_AUTH_BASE_URL}/oauth/token"
 ECOBEE_MFA_OTP_CHALLENGE_PATH = "/u/mfa-otp-challenge"
+ECOBEE_MFA_SMS_CHALLENGE_PATH = "/u/mfa-sms-challenge"
 
 
 def _state_from_url(url: str) -> str:
@@ -395,9 +396,13 @@ class Ecobee(object):
         except RequestException as err:
             raise EcobeeAuthUnknownError(f"Failed to submit OTP code: {err}") from err
 
+        # SMS MFA: Auth0 returns 400 for a wrong code (no redirect).
+        # TOTP MFA: Auth0 redirects back to the challenge URL for a wrong code.
+        if resp.status_code == 400:
+            raise EcobeeAuthFailedError("The MFA code was not accepted by ecobee.")
+
         landed_url = self._resolve_post_login_redirect(session, resp)
-        # On a rejected OTP, Auth0 redirects back to the same challenge URL.
-        if ECOBEE_MFA_OTP_CHALLENGE_PATH in landed_url:
+        if ECOBEE_MFA_OTP_CHALLENGE_PATH in landed_url or ECOBEE_MFA_SMS_CHALLENGE_PATH in landed_url:
             raise EcobeeAuthFailedError("The MFA code was not accepted by ecobee.")
 
         code_value = _code_from_url(landed_url)
@@ -429,12 +434,22 @@ class Ecobee(object):
                     code_verifier=verifier,
                 )
             )
+        if ECOBEE_MFA_SMS_CHALLENGE_PATH in landed_url:
+            raise EcobeeAuthMfaRequiredError(
+                MfaChallenge(
+                    challenge_url=landed_url,
+                    state=_state_from_url(landed_url),
+                    mfa_type="sms",
+                    cookies=session.cookies.get_dict(),
+                    code_verifier=verifier,
+                )
+            )
         if "/u/mfa-" in landed_url:
-            # Other MFA challenge types (push/sms/email) — unsupported for now.
+            # Other MFA challenge types (push/email) — unsupported for now.
             raise EcobeeAuthUnknownError(
                 f"ecobee account requires an MFA type that is not yet "
                 f"supported by this library (challenge URL: {landed_url}). "
-                f"TOTP via an authenticator app is supported."
+                f"TOTP and SMS are supported."
             )
         if "/u/login/password" in landed_url:
             raise EcobeeAuthFailedError(

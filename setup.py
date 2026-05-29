@@ -8,8 +8,8 @@ try:
 except ImportError:
     from distutils.core import setup
 
-if sys.argv[-1] == 'publish':
-    os.system('python setup.py sdist upload')
+if sys.argv[-1] == "publish":
+    os.system("python setup.py sdist upload")
     sys.exit()
 
 license = """
@@ -32,13 +32,15 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-setup(name='python-ecobee-api',
-      version='0.4.0',
-      description='Python API for talking to Ecobee thermostats',
-      url='https://github.com/nkgilley/python-ecobee-api',
-      author='Nolan Gilley',
-      author_email='nkgilley@gmail.com',
-      license='MIT',
-      install_requires=['requests>=2.25'],
-      packages=['pyecobee'],
-      zip_safe=True)
+setup(
+    name="python-ecobee-api",
+    version="0.4.1",
+    description="Python API for talking to Ecobee thermostats",
+    url="https://github.com/nkgilley/python-ecobee-api",
+    author="Nolan Gilley",
+    author_email="nkgilley@gmail.com",
+    license="MIT",
+    install_requires=["requests>=2.25"],
+    packages=["pyecobee"],
+    zip_safe=True,
+)

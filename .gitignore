@@ -11,3 +11,4 @@ __pycache__/
 *.har
 NOTES_auth_flow.md
 extensions-*.md
+dist/

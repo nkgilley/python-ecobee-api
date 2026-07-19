@@ -93,9 +93,9 @@ def _generate_pkce_pair() -> tuple[str, str]:
 class MfaChallenge:
     """Opaque resumption state for an in-progress MFA-gated login.
 
-    Returned (via :class:`EcobeeAuthMfaRequiredError`) when ecobee Auth0
-    interrupts the login flow with an MFA challenge. Pass this back into
-    :meth:`Ecobee.submit_mfa_code` along with the user-entered code to
+    Returned via :attr:`EcobeeAuthMfaRequiredError.challenge` when ecobee
+    Auth0 interrupts the login flow with an MFA challenge. Pass this back
+    into :meth:`Ecobee.submit_mfa_code` along with the user-entered code to
     complete the login and obtain tokens.
     """
 

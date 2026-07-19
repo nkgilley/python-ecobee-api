@@ -26,10 +26,17 @@ class EcobeeAuthUnknownError(EcobeeError):
 class EcobeeAuthMfaRequiredError(EcobeeError):
     """Raised when ecobee Auth0 redirects to an MFA challenge during login.
 
-    Carries an :class:`~pyecobee.MfaChallenge` payload (in ``args[0]``) that
-    must be passed back into :meth:`Ecobee.submit_mfa_code` along with the
-    user-entered OTP code to resume the login flow.
+    Carries an :class:`~pyecobee.MfaChallenge` payload that must be passed
+    back into :meth:`Ecobee.submit_mfa_code` along with the user-entered OTP
+    code to resume the login flow.
+
+    Prefer :attr:`challenge` over indexing ``args[0]``.
     """
+
+    @property
+    def challenge(self):
+        """Return the :class:`~pyecobee.MfaChallenge` carried by this error."""
+        return self.args[0]
 
 
 # Sensor errors

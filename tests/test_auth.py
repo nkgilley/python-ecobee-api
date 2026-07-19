@@ -209,7 +209,8 @@ def test_request_tokens_web_mfa_required_raises_with_challenge(
     ecobee = _make_ecobee()
     with pytest.raises(EcobeeAuthMfaRequiredError) as exc_info:
         ecobee.request_tokens_web()
-    challenge = exc_info.value.args[0]
+    challenge = exc_info.value.challenge
+    assert challenge is exc_info.value.args[0]
     assert isinstance(challenge, MfaChallenge)
     assert challenge.mfa_type == "otp"
     assert challenge.state == "MFA_STATE_9"
@@ -237,7 +238,8 @@ def test_request_tokens_web_sms_mfa_required_raises_with_challenge(
     ecobee = _make_ecobee()
     with pytest.raises(EcobeeAuthMfaRequiredError) as exc_info:
         ecobee.request_tokens_web()
-    challenge = exc_info.value.args[0]
+    challenge = exc_info.value.challenge
+    assert challenge is exc_info.value.args[0]
     assert isinstance(challenge, MfaChallenge)
     assert challenge.mfa_type == "sms"
     assert challenge.state == "SMS_STATE_7"

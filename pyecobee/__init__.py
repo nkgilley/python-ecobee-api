@@ -109,7 +109,14 @@ class MfaChallenge:
 class Ecobee(object):
     """Class for communicating with the ecobee API."""
 
-    def __init__(self, config_filename: str = None, config: dict = None):
+    def __init__(
+        self,
+        config_filename: str = None,
+        config: dict = None,
+        *,
+        session: Optional[requests.Session] = None,
+    ):
+        self._session = session if session is not None else requests.Session()
         self.thermostats = None
         self.config_filename = config_filename
         self.config = config
@@ -1304,7 +1311,7 @@ class Ecobee(object):
         )
 
         try:
-            response = requests.request(
+            response = self._session.request(
                 method, url, headers=headers, params=params, json=body, timeout=ECOBEE_DEFAULT_TIMEOUT
             )
 

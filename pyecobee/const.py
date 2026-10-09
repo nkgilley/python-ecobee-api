@@ -39,6 +39,7 @@ ECOBEE_WEB_SCOPE: Final[str] = (
 ECOBEE_OAUTH_TOKEN_URL: Final[str] = f"{ECOBEE_AUTH_BASE_URL}/oauth/token"
 ECOBEE_MFA_OTP_CHALLENGE_PATH: Final[str] = "/u/mfa-otp-challenge"
 ECOBEE_MFA_SMS_CHALLENGE_PATH: Final[str] = "/u/mfa-sms-challenge"
+ECOBEE_CUSTOM_PROMPT_PATH: Final[str] = "/u/custom-prompt"
 
 ECOBEE_MODEL_TO_NAME: Final[Dict[str, str]] = {
     "idtSmart": "ecobee Smart Thermostat",

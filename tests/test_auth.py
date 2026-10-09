@@ -269,6 +269,28 @@ def test_request_tokens_web_unsupported_mfa_type_raises_unknown(
         ecobee.request_tokens_web()
 
 
+def test_request_tokens_web_custom_prompt_raises_auth_failed(
+    requests_mock: rm_module.Mocker,
+) -> None:
+    """Redirect to /u/custom-prompt indicates interactive TOS/prompt required."""
+    _register_initial_get(requests_mock)
+    _register_identifier_post(requests_mock)
+    requests_mock.post(
+        f"{AUTH_BASE}/u/login/password",
+        status_code=302,
+        headers={"Location": f"{AUTH_BASE}/u/custom-prompt/terms?state=TOS_STATE"},
+    )
+    requests_mock.get(
+        f"{AUTH_BASE}/u/custom-prompt/terms?state=TOS_STATE",
+        status_code=200,
+        text="<html>TOS prompt</html>",
+    )
+
+    ecobee = _make_ecobee()
+    with pytest.raises(EcobeeAuthFailedError, match="Terms of Service"):
+        ecobee.request_tokens_web()
+
+
 def test_request_tokens_web_unexpected_initial_landing_raises_unknown(
     requests_mock: rm_module.Mocker,
 ) -> None:
@@ -437,6 +459,33 @@ def test_submit_mfa_code_sms_wrong_code_raises_failed(
     ecobee = _make_ecobee()
     with pytest.raises(EcobeeAuthFailedError, match="not accepted"):
         ecobee.submit_mfa_code(challenge, "000000")
+
+
+def test_submit_mfa_code_custom_prompt_raises_auth_failed(
+    requests_mock: rm_module.Mocker,
+) -> None:
+    """Redirect to /u/custom-prompt after MFA code indicates interactive prompt required."""
+    challenge_url = f"{AUTH_BASE}/u/mfa-otp-challenge?state=MFA_STATE"
+    requests_mock.post(
+        challenge_url,
+        status_code=302,
+        headers={"Location": f"{AUTH_BASE}/u/custom-prompt/terms?state=TOS_STATE"},
+    )
+    requests_mock.get(
+        f"{AUTH_BASE}/u/custom-prompt/terms?state=TOS_STATE",
+        status_code=200,
+        text="<html>TOS prompt</html>",
+    )
+
+    challenge = MfaChallenge(
+        challenge_url=challenge_url,
+        state="MFA_STATE",
+        mfa_type="otp",
+        code_verifier="V",
+    )
+    ecobee = _make_ecobee()
+    with pytest.raises(EcobeeAuthFailedError, match="Terms of Service"):
+        ecobee.submit_mfa_code(challenge, "123456")
 
 
 def test_refresh_tokens_prefers_refresh_grant_when_token_present(

@@ -30,6 +30,7 @@ from .const import (
     ECOBEE_ENDPOINT_AUTH,
     ECOBEE_ENDPOINT_THERMOSTAT,
     ECOBEE_ENDPOINT_TOKEN,
+    ECOBEE_CUSTOM_PROMPT_PATH,
     ECOBEE_MFA_OTP_CHALLENGE_PATH,
     ECOBEE_MFA_SMS_CHALLENGE_PATH,
     ECOBEE_OAUTH_TOKEN_URL,
@@ -408,6 +409,12 @@ class Ecobee(object):
         landed_url = self._resolve_post_login_redirect(session, resp)
         if ECOBEE_MFA_OTP_CHALLENGE_PATH in landed_url or ECOBEE_MFA_SMS_CHALLENGE_PATH in landed_url:
             raise EcobeeAuthFailedError("The MFA code was not accepted by ecobee.")
+        if ECOBEE_CUSTOM_PROMPT_PATH in landed_url:
+            raise EcobeeAuthFailedError(
+                "ecobee account requires completing an interactive prompt (such as "
+                "accepting updated Terms of Service) before logging in. "
+                f"Please log in directly at {ECOBEE_AUTH_BASE_URL}/u/login in a web browser."
+            )
 
         code_value = _code_from_url(landed_url)
         if not code_value:
@@ -458,6 +465,12 @@ class Ecobee(object):
         if "/u/login/password" in landed_url:
             raise EcobeeAuthFailedError(
                 "ecobee rejected the supplied password."
+            )
+        if ECOBEE_CUSTOM_PROMPT_PATH in landed_url:
+            raise EcobeeAuthFailedError(
+                "ecobee account requires completing an interactive prompt (such as "
+                "accepting updated Terms of Service) before logging in. "
+                f"Please log in directly at {ECOBEE_AUTH_BASE_URL}/u/login in a web browser."
             )
         if _code_from_url(landed_url) is None:
             raise EcobeeAuthUnknownError(
@@ -1101,7 +1114,7 @@ class Ecobee(object):
             },
             "thermostat": {"settings": {"ventilatorMinOnTimeHome": ventilator_min_on_time_home}},
         }
-        log_msg_action = "set ventilator minimum on time when homw"
+        log_msg_action = "set ventilator minimum on time when home"
 
         try:
             self._request_with_refresh(

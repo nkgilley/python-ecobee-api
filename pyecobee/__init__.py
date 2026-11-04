@@ -1205,8 +1205,6 @@ class Ecobee(object):
             raise ValueError("Either `sensor_names` or `ids` should be provided, not both.")
 
         programs: dict = self.thermostats[index]["program"]
-        # Remove currentClimateRef key.
-        programs.pop("currentClimateRef", None)
 
         for i, climate in enumerate(programs["climates"]):
             if climate["name"] == climate_name:
@@ -1248,7 +1246,13 @@ class Ecobee(object):
                 "selectionMatch": self.thermostats[index]["identifier"],
             },
             "thermostat": {
-                "program": programs
+                # The API rejects the read-only currentClimateRef. Leave it out of the
+                # request only, since callers read it from the cached thermostat.
+                "program": {
+                    key: value
+                    for key, value in programs.items()
+                    if key != "currentClimateRef"
+                }
             }
         }
         log_msg_action = "upate climate sensors"

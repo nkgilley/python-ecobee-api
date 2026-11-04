@@ -1011,6 +1011,129 @@ class Ecobee(object):
         except (ExpiredTokenError, InvalidTokenError) as err:
             raise err
 
+    def set_humidity_high_alert(self, index: int, level: int) -> None:
+        """Sets the humidity level that triggers a high humidity alert (-1 disables it)."""
+        body = {
+            "selection": {
+                "selectionType": "thermostats",
+                "selectionMatch": self.thermostats[index]["identifier"],
+            },
+            "thermostat": {"settings": {"humidityHighAlert": level}},
+        }
+        log_msg_action = "set high humidity alert"
+
+        try:
+            self._request_with_refresh(
+                "POST", ECOBEE_ENDPOINT_THERMOSTAT, log_msg_action, body=body
+            )
+        except (ExpiredTokenError, InvalidTokenError) as err:
+            raise err
+
+    def set_humidity_low_alert(self, index: int, level: int) -> None:
+        """Sets the humidity level that triggers a low humidity alert (-1 disables it)."""
+        body = {
+            "selection": {
+                "selectionType": "thermostats",
+                "selectionMatch": self.thermostats[index]["identifier"],
+            },
+            "thermostat": {"settings": {"humidityLowAlert": level}},
+        }
+        log_msg_action = "set low humidity alert"
+
+        try:
+            self._request_with_refresh(
+                "POST", ECOBEE_ENDPOINT_THERMOSTAT, log_msg_action, body=body
+            )
+        except (ExpiredTokenError, InvalidTokenError) as err:
+            raise err
+
+    def set_humidity_alert_notify(self, index: int, enabled: bool) -> None:
+        """Sets whether humidity alerts are sent to the thermostat owner."""
+        body = {
+            "selection": {
+                "selectionType": "thermostats",
+                "selectionMatch": self.thermostats[index]["identifier"],
+            },
+            "thermostat": {"settings": {"humidityAlertNotify": enabled}},
+        }
+        log_msg_action = "set humidity alert notify"
+
+        try:
+            self._request_with_refresh(
+                "POST", ECOBEE_ENDPOINT_THERMOSTAT, log_msg_action, body=body
+            )
+        except (ExpiredTokenError, InvalidTokenError) as err:
+            raise err
+
+    def set_humidity_alert_notify_technician(self, index: int, enabled: bool) -> None:
+        """Sets whether humidity alerts are sent to the technician."""
+        body = {
+            "selection": {
+                "selectionType": "thermostats",
+                "selectionMatch": self.thermostats[index]["identifier"],
+            },
+            "thermostat": {"settings": {"humidityAlertNotifyTechnician": enabled}},
+        }
+        log_msg_action = "set humidity alert notify technician"
+
+        try:
+            self._request_with_refresh(
+                "POST", ECOBEE_ENDPOINT_THERMOSTAT, log_msg_action, body=body
+            )
+        except (ExpiredTokenError, InvalidTokenError) as err:
+            raise err
+
+    def set_equipment_notification(
+        self,
+        index: int,
+        equipment_type: str,
+        filter_last_changed: Optional[str] = None,
+        filter_life: Optional[int] = None,
+        enabled: Optional[bool] = None,
+        remind_technician: Optional[bool] = None,
+    ) -> None:
+        """Updates the reminder settings of one type of equipment, e.g. humidifierFilter.
+
+        Needs the notification settings to be included in the thermostat data. Every
+        type is sent back with its cached values, without the read-only remindMeDate.
+        The cached thermostat data is not changed.
+        """
+        changes = {
+            key: value
+            for key, value in (
+                ("filterLastChanged", filter_last_changed),
+                ("filterLife", filter_life),
+                ("enabled", enabled),
+                ("remindTechnician", remind_technician),
+            )
+            if value is not None
+        }
+        equipment = [
+            {
+                **{key: value for key, value in item.items() if key != "remindMeDate"},
+                **(changes if item["type"] == equipment_type else {}),
+            }
+            for item in self.get_equipment_notifications(index)
+        ]
+        if not any(item["type"] == equipment_type for item in equipment):
+            raise ValueError(f"Unknown equipment type: {equipment_type}")
+
+        body = {
+            "selection": {
+                "selectionType": "thermostats",
+                "selectionMatch": self.thermostats[index]["identifier"],
+            },
+            "thermostat": {"notificationSettings": {"equipment": equipment}},
+        }
+        log_msg_action = "set equipment notification"
+
+        try:
+            self._request_with_refresh(
+                "POST", ECOBEE_ENDPOINT_THERMOSTAT, log_msg_action, body=body
+            )
+        except (ExpiredTokenError, InvalidTokenError) as err:
+            raise err
+
     def set_mic_mode(self, index: int, mic_enabled: bool) -> None:
         """Enables/Disables Alexa microphone (only for ecobee4)."""
         body = {
